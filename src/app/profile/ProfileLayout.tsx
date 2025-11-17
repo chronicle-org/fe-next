@@ -1,0 +1,716 @@
+"use client";
+
+import {
+  ChevronIcon,
+  CommentIcon,
+  EditIcon,
+  PasswordHideIcon,
+  PasswordShowIcon,
+} from "@/components/Icons";
+import { Button } from "@/components/ui/Button";
+import { TLoginResponse } from "@/lib/api/auth";
+import { cn, convertDateTime } from "@/lib/utils";
+import Image from "next/image";
+import { FormEvent, useMemo, useRef, useState } from "react";
+import "react-quill-new/dist/quill.snow.css";
+import "react-quill-new/dist/quill.bubble.css";
+import {
+  toolbarContentOptions,
+  toolbarBaseOptions,
+  fileUploadKey,
+} from "@/lib/constants";
+import dynamic from "next/dynamic";
+import {
+  addPost,
+  editPost,
+  getAllPostsByUser,
+  TAddPostPayload,
+  TPost,
+} from "@/lib/api/post";
+import ImageUploader from "@/components/ui/UploadImage";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { uploadFile } from "@/lib/api/file";
+import { toast } from "sonner";
+import { TApiErrorResponse } from "@/lib/api";
+import PostCard from "@/components/ui/PostCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  BookIcon,
+  Calendar1Icon,
+  GalleryThumbnailsIcon,
+  ImageIcon,
+  PlusSquareIcon,
+  SaveIcon,
+  UndoIcon,
+  UserIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { FancyInput } from "@/components/ui/InputFancy";
+import { TUpdatePayload, updateProfile } from "@/lib/api/user";
+import HTMLReactParser from "html-react-parser/lib/index";
+import "quill/dist/quill.bubble.css";
+import { Textarea } from "@/components/ui/textarea";
+import { getAllByPostId, postComment } from "@/lib/api/comment";
+import { Spinner } from "@/components/ui/spinner";
+
+const ProfileLayout = ({
+  data,
+  isVisit = false,
+  onRefetchUser,
+}: {
+  data: TLoginResponse;
+  isVisit?: boolean;
+  onRefetchUser: () => void;
+}) => {
+  const [edit, setEdit] = useState<Partial<TPost>>();
+  const { mutate: upload, isPending: isUploadingFile } = useMutation({
+    mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
+      uploadFile(data.file, data.type),
+  });
+
+  const { mutate: updateProfileData, isPending: isUpdatingProfile } =
+    useMutation({
+      mutationFn: (data: TUpdatePayload) => updateProfile(data),
+      onSuccess: () => {
+        toast.success("Profile updated");
+        onRefetchUser();
+      },
+      onError: (error) => {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      },
+    });
+
+  return (
+    <div className="my-10 mx-auto flex flex-col gap-10 w-full max-w-[80vw]">
+      <div className="flex flex-col gap-10 relative w-full">
+        {/* BANNER */}
+        <div className="relative w-full h-[200px]">
+          {!isVisit ? (
+            <ImageUploader
+              value={data.banner_url}
+              onChange={async (_, file) => {
+                if (file)
+                  await upload(
+                    { file, type: 2 },
+                    {
+                      onSuccess: async (res) => {
+                        await updateProfileData({
+                          banner_url: res.data.content?.url,
+                        });
+                      },
+                      onError: (error) => {
+                        const err = error as TApiErrorResponse;
+                        toast.error(err.response?.data.error);
+                      },
+                    }
+                  );
+              }}
+              disabled={isUploadingFile || isUpdatingProfile}
+              mode="overlay"
+              layout="fill"
+            />
+          ) : (
+            <>
+              {data.banner_url ? (
+                <Image
+                  src={data.banner_url || ""}
+                  alt={data.banner_url || ""}
+                  fill
+                  className="absolute border border-foreground rounded-2xl"
+                />
+              ) : (
+                <ImageIcon className="w-full h-full self-center text-muted-foreground border border-muted rounded-2xl" />
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-10">
+          <SideProfile
+            data={data}
+            isPending={isUploadingFile || isUpdatingProfile}
+            isVisit={isVisit}
+            onUpload={(file, type) => {
+              upload(
+                { file, type },
+                {
+                  onSuccess: async (res) => {
+                    await updateProfileData({
+                      picture_url: res.data.content?.url,
+                    });
+                  },
+                  onError: (error) => {
+                    const err = error as TApiErrorResponse;
+                    toast.error(err.response?.data.error);
+                  },
+                }
+              );
+            }}
+            onUpdateProfile={updateProfileData}
+          />
+          {edit ? (
+            <BlogEditor
+              data={edit}
+              onBack={() => setEdit(undefined)}
+              isVisit={isVisit}
+            />
+          ) : (
+            <PostContainer userData={data} onEdit={setEdit} isVisit={isVisit} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileLayout;
+
+const SideProfile = ({
+  data,
+  isVisit,
+  isPending,
+  onUpload,
+  onUpdateProfile,
+}: {
+  data: TLoginResponse;
+  isVisit?: boolean;
+  onUpload: (file: File, type: keyof typeof fileUploadKey) => void;
+  onUpdateProfile: (data: TUpdatePayload) => void;
+  isPending: boolean;
+}) => {
+  const [isEdit, setIsEdit] = useState(false);
+  const [formData, setFormData] = useState<TUpdatePayload>(data);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onUpdateProfile(formData);
+  };
+  return (
+    <div className="flex flex-col gap-5 border-r border-muted p-10">
+      {/* PROFILE PICTURE */}
+      {!isVisit ? (
+        <div className="w-[200px] h-[200px]">
+          <ImageUploader
+            value={data.picture_url}
+            onChange={(_, file) => {
+              if (file) onUpload(file, 3);
+            }}
+            mode="overlay"
+            layout="fill"
+            disabled={isPending}
+            imageClassName="rounded-full"
+          />
+        </div>
+      ) : data.picture_url ? (
+        <Image
+          src={data.picture_url}
+          alt={data.picture_url}
+          width={400}
+          height={400}
+          className={cn(
+            "rounded-full max-w-[200px] max-h-[200px] w-[50vw] h-[50vh] object-cover",
+            "border border-foreground bg-accent-foreground shrink"
+          )}
+        />
+      ) : (
+        <UserIcon
+          width={200}
+          height={200}
+          className="rounded-full border border-muted"
+        />
+      )}
+
+      <div className="flex flex-col gap-5">
+        {isEdit ? (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+            <FancyInput
+              label="Name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+            />
+            <FancyInput
+              label="Bio"
+              value={formData.profile_description}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  profile_description: e.target.value,
+                }))
+              }
+            />
+          </form>
+        ) : (
+          <>
+            <div className="items-center">
+              <div>{data.name}</div>
+              <div className="text-sm text-muted-foreground">
+                @{data.handle}
+              </div>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`mailto:${data.email}`}
+                  className="text-sm text-blue-500"
+                >
+                  {data.email}
+                </Link>
+              </div>
+            </div>
+            <div>{data.profile_description}</div>
+            <div className="flex items-center text-muted-foreground text-sm gap-1">
+              <Calendar1Icon height={16} width={16} />
+              {convertDateTime({
+                date: data.created_at,
+                format: "D MMMM YYYY",
+              })}
+            </div>
+          </>
+        )}
+        {isEdit ? (
+          <div className="flex gap-2">
+            <Button
+              variant={"secondary"}
+              className="w-fit"
+              onClick={() => {
+                setIsEdit(false);
+                onUpdateProfile(formData);
+              }}
+              disabled={isPending}
+            >
+              <SaveIcon />
+            </Button>
+            <Button
+              variant={"destructive"}
+              className="w-fit"
+              onClick={() => setIsEdit(false)}
+              disabled={isPending}
+            >
+              <UndoIcon />
+            </Button>
+          </div>
+        ) : (
+          !isVisit && (
+            <Button
+              variant={"secondary"}
+              className="w-fit"
+              onClick={() => setIsEdit(true)}
+              disabled={isPending}
+            >
+              <EditIcon color="var(--foreground)" />
+            </Button>
+          )
+        )}
+      </div>
+    </div>
+  );
+};
+
+type TEditorTheme = "snow" | "bubble";
+
+const initPayloadData: TAddPostPayload & { thumbnail_file?: File } = {
+  title: "",
+  sub_title: "",
+  thumbnail_url: "",
+  content: "",
+};
+
+export const BlogEditor = ({
+  data,
+  isVisit,
+  onBack,
+}: {
+  data?: Partial<TPost>;
+  isVisit?: boolean;
+  onBack: () => void;
+}) => {
+  const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
+    data || initPayloadData
+  );
+  const [theme, setTheme] = useState<TEditorTheme>("snow");
+  const formRef = useRef<HTMLFormElement>(null);
+  const ReactQuill = useMemo(
+    () => dynamic(() => import("react-quill-new"), { ssr: false }),
+    []
+  );
+
+  const { mutate: upload, isPending: isUploadingFile } = useMutation({
+    mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
+      uploadFile(data.file, data.type),
+    // onSuccess: (res) => {
+    //   setFormData((prev) => ({
+    //     ...prev,
+    //     thumbnail_url: res.data.content?.url,
+    //   }));
+    // },
+    // onError: (err: TApiErrorResponse) => {
+    //   toast.error(err.response?.data.error);
+    // },
+  });
+
+  const { mutate: submitPost, isPending: isSubmittingPost } = useMutation({
+    mutationFn: (data: TAddPostPayload) => addPost(data),
+    onSuccess: () => onBack(),
+    onError: (err: TApiErrorResponse) => {
+      toast.error(err.response?.data.error);
+    },
+  });
+
+  const { mutate: updatePost, isPending: isUpdatingPost } = useMutation({
+    mutationFn: (payload: { id: number; data: Partial<TAddPostPayload> }) =>
+      editPost(payload.id, payload.data),
+    onSuccess: () => onBack(),
+    onError: (err: TApiErrorResponse) => {
+      toast.error(err.response?.data.error);
+    },
+  });
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const { thumbnail_file, ...rest } = formData;
+    if (!!thumbnail_file)
+      await upload(
+        { file: thumbnail_file, type: 1 },
+        {
+          onSuccess: async (res) => {
+            const newData = {
+              title: formData.title,
+              sub_title: formData.sub_title,
+              thumbnail_url: res.data.content?.url,
+              content: formData.content,
+            };
+            if (data?.id) await updatePost({ id: data.id, data: newData });
+            else await submitPost(newData as TAddPostPayload);
+          },
+          onError: (error) => {
+            const err = error as TApiErrorResponse;
+            toast.error(err.response?.data.error);
+          },
+        }
+      );
+    else {
+      if (data?.id) await updatePost({ id: data.id, data: rest });
+      else await submitPost(rest as TAddPostPayload);
+    }
+  };
+
+  const handleChange = (key: keyof typeof formData, value?: string | File) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+  return (
+    <div className="flex flex-col gap-10 w-full">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="w-full flex-1 flex flex-col gap-10"
+      >
+        <div className="flex justify-between items-center">
+          <div className="cursor-pointer" onClick={onBack}>
+            <ChevronIcon color="var(--foreground)" /> Back
+          </div>
+
+          {!isVisit && (
+            <div className="flex gap-5 self-end items-center">
+              <div
+                className="w-fit h-fit cursor-pointer p-2"
+                onClick={() => setTheme(theme === "snow" ? "bubble" : "snow")}
+              >
+                {theme === "snow" ? (
+                  <PasswordShowIcon
+                    width={20}
+                    height={20}
+                    color="var(--foreground)"
+                  />
+                ) : (
+                  <PasswordHideIcon
+                    width={20}
+                    height={20}
+                    color="var(--foreground)"
+                  />
+                )}
+              </div>
+
+              <Button
+                variant={"secondary"}
+                type="submit"
+                disabled={isUploadingFile || isSubmittingPost || isUpdatingPost}
+              >
+                Submit
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="w-full flex flex-col gap-10 max-w-[800px] mx-auto">
+          <div className="flex gap-10 items-center max-md:flex-wrap-reverse">
+            <div className="flex flex-col gap-5 w-full">
+              <div>
+                {isVisit ? (
+                  <div className="w-full ql-bubble">
+                    <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
+                      {HTMLReactParser(data?.title || "")}
+                    </div>
+                  </div>
+                ) : (
+                  <ReactQuill
+                    theme={theme}
+                    value={formData.title}
+                    placeholder="Title"
+                    modules={{ toolbar: toolbarBaseOptions }}
+                    onChange={(value) => handleChange("title", value)}
+                  />
+                )}
+              </div>
+              <div>
+                {isVisit ? (
+                  <div className="w-full ql-bubble">
+                    <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
+                      {HTMLReactParser(data?.sub_title || "")}
+                    </div>
+                  </div>
+                ) : (
+                  <ReactQuill
+                    theme={theme}
+                    value={formData.sub_title}
+                    placeholder="Subtitle"
+                    modules={{ toolbar: toolbarBaseOptions }}
+                    onChange={(value) => handleChange("sub_title", value)}
+                  />
+                )}
+              </div>
+            </div>
+            {isVisit ? (
+              <>
+                {data?.thumbnail_url ? (
+                  <div className="relative w-full aspect-square">
+                    <Image
+                      src={data?.thumbnail_url}
+                      alt={"thumbnail"}
+                      fill
+                      className="rounded-2xl object-cover"
+                    />
+                  </div>
+                ) : (
+                  <GalleryThumbnailsIcon className="w-full aspect-square" />
+                )}
+              </>
+            ) : (
+              <ImageUploader
+                label="Thumbnail"
+                value={formData.thumbnail_url}
+                onChange={(_, file) => handleChange("thumbnail_file", file)}
+              />
+            )}
+          </div>
+          <div>
+            {isVisit ? (
+              <div className="w-full ql-bubble">
+                <div className="ql-editor p-0!">
+                  {HTMLReactParser(data?.content || "")}
+                </div>
+              </div>
+            ) : (
+              <ReactQuill
+                theme={theme}
+                value={formData.content}
+                modules={{ toolbar: toolbarContentOptions }}
+                placeholder="Tell your story..."
+                onChange={(value) => handleChange("content", value)}
+              />
+            )}
+          </div>
+        </div>
+      </form>
+      {isVisit && <CommentContainer postId={data?.id} userId={data?.user_id} />}
+    </div>
+  );
+};
+
+const PostContainer = ({
+  userData,
+  isVisit,
+  onEdit,
+}: {
+  userData: TLoginResponse;
+  isVisit?: boolean;
+  onEdit: (data: Partial<TPost>) => void;
+}) => {
+  // const {
+  //   data,
+  //   fetchNextPage,
+  //   hasNextPage,
+  //   isFetchingNextPage,
+  // } = useInfiniteQuery({
+  //   queryKey: ["posts"],
+  //   queryFn: ({ pageParam = 1 }) => getAllPostsByUser(),
+  //   getNextPageParam: (lastPage) => lastPage.nextPage ?? false,
+  // });
+
+  const { data: postsData, isFetching: isFetchingPostsData } = useQuery({
+    queryKey: [`user-${userData.id}-posts`],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      try {
+        const res = await getAllPostsByUser(userData.id);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-5 w-full max-w-[800px] mx-auto">
+      {!isVisit && (
+        <Button
+          variant={"secondary"}
+          className="w-fit self-end"
+          onClick={() => onEdit(initPayloadData)}
+        >
+          <PlusSquareIcon />
+          New
+        </Button>
+      )}
+      {isFetchingPostsData ? (
+        <div className="flex flex-wrap w-full gap-2.5">
+          {Array(3)
+            .fill("")
+            .map((_, index) => {
+              return (
+                <Skeleton className="h-[125px] w-full rounded-xl" key={index} />
+              );
+            })}
+        </div>
+      ) : !postsData?.length ? (
+        <div className="flex flex-col gap-5 mx-auto items-center text-muted-foreground flex-1 justify-center">
+          <BookIcon width={50} height={50} />
+          <p>{isVisit ? "No post found" : "Start creating your story"}</p>
+        </div>
+      ) : (
+        postsData.map((post) => {
+          return (
+            <PostCard data={post} key={post.id} onClick={() => onEdit(post)} />
+          );
+        })
+      )}
+    </div>
+  );
+};
+
+// const CommentCard = ({ data }: { data: TComment }) => {
+//   return (
+//     <div ></div>
+//   )
+// }
+
+const CommentContainer = ({
+  postId,
+  userId,
+}: {
+  postId?: number;
+  userId?: number;
+}) => {
+  const [comment, setComment] = useState("");
+  // const ReactQuill = useMemo(
+  //   () => dynamic(() => import("react-quill-new"), { ssr: false }),
+  //   []
+  // );
+  const { data: comments, refetch: refetchComments } = useQuery({
+    queryKey: [`post-${postId}-comments`],
+    queryFn: async () => {
+      try {
+        const res = await getAllByPostId(postId as number);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+  const { mutate: post, isPending: isPosting } = useMutation({
+    mutationFn: () =>
+      postComment({ user_id: userId!, post_id: postId!, content: comment }),
+    onSuccess: async () => {
+      toast.success("Comment posted");
+      setComment("")
+      refetchComments();
+    },
+    onError: (error: TApiErrorResponse) => {
+      toast.error(error.response?.data.error);
+    },
+  });
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+  };
+  return (
+    <div className="flex flex-col gap-10 w-full max-w-[800px] mx-auto">
+      <div className="text-end">{comments?.length || 0} Comments</div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        {/* <ReactQuill
+          theme={"snow"}
+          value={comment}
+          placeholder="Title"
+          modules={{ toolbar: toolbarBaseOptions }}
+          onChange={(value) => setComment(value)}
+        /> */}
+        {/* <FancyInput 
+          label="Comment"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+        /> */}
+        <Textarea
+          placeholder="Write your comment here..."
+          value={comment}
+          disabled={isPosting}
+          onChange={(e) => setComment(e.target.value)}
+        />
+        <Button
+          variant={"secondary"}
+          className="w-fit self-end"
+          disabled={!comment.length || isPosting}
+          onClick={() => post()}
+          type="button"
+        >
+          Submit
+          {isPosting && <Spinner />}
+        </Button>
+      </form>
+      {!comments || !comments.length ? (
+        <div className="w-full flex flex-col gap-5 text-muted-foreground items-center">
+          <p>No comment found</p>
+          <CommentIcon width={100} height={100} />
+        </div>
+      ) : (
+        comments.map((comment) => {
+          return (
+            <div
+              key={comment.id}
+              className={cn(
+                "w-full max-h-[100px] truncate",
+                "p-2.5 text-sm flex gap-10"
+              )}
+            >
+              <div className="flex flex-col gap-2.5 border-r border-muted px-5 max-w-[200px]">
+                {!comment.user.picture_url ? (
+                  <UserIcon />
+                ) : (
+                  <div className="relative h-[30px] aspect-square rounded-full overflow-hidden">
+                    <Image
+                      src={comment.user.picture_url}
+                      alt={comment.user.name}
+                      fill
+                    />
+                  </div>
+                )}
+                <span className="w-full text-xs text-muted-foreground">@{comment.user.handle}</span>
+              </div>
+              <p>{comment.content}</p>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
