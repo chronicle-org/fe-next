@@ -11,11 +11,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteCookie, getCookie } from "@/lib/utils";
-import { logUserOut, TLoginResponse } from "@/lib/api/auth";
+import { deleteCookie } from "@/lib/utils";
+import { logUserOut } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
 import { UserIcon } from "lucide-react";
+import { useUserStore } from "@/lib/stores/user.store";
+import { useStore } from "zustand";
 
 const Navigation = () => {
   const { theme, setTheme } = useTheme();
@@ -88,14 +90,17 @@ export default Navigation;
 
 const DropdownNavMenu = () => {
   const { push } = useRouter();
-  const cookie: TLoginResponse = JSON.parse(getCookie() || "{}");
+
+  const user = useStore(useUserStore, (s) => s.user);
+  const setUser = useStore(useUserStore, (s) => s.setUser);
 
   const handleLogout = () => {
     toast.promise(logUserOut(), {
       loading: "Loading...",
       success: async () => {
         await deleteCookie();
-        push("/auth")
+        setUser(null);
+        push("/auth");
         return "Successfully logged out";
       },
       error: (err: TApiErrorResponse) => {
@@ -108,12 +113,12 @@ const DropdownNavMenu = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="relative w-[30px] h-[30px] cursor-pointer">
-          {!cookie.picture_url ? (
+          {!user?.picture_url ? (
             <UserIcon width={30} height={30} />
           ) : (
             <Image
-              src={cookie.picture_url || ""}
-              alt={cookie.name}
+              src={user?.picture_url || ""}
+              alt={user?.name}
               fill
               className="rounded-full"
             />

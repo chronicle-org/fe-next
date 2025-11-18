@@ -11,6 +11,8 @@ import Image from "next/image";
 import { TApiErrorResponse } from "@/lib/api";
 import { cn, setCookie } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/lib/stores/user.store";
+import { useStore } from "zustand";
 
 const initForm: TLoginPayload = {
   email: "",
@@ -18,16 +20,18 @@ const initForm: TLoginPayload = {
 };
 
 const SignIn = () => {
-  const { push } = useRouter()
+  const { push } = useRouter();
   const [form, setForm] = useState<TLoginPayload>(initForm);
+  const refreshUser = useStore(useUserStore, (s) => s.refreshUser);
 
   const { mutate: logIn, isPending: isLoggingIn } = useMutation({
     mutationFn: () => logUserIn(form),
     onSuccess: async (res) => {
       toast.success("Successfully logged in");
-      const parsedCookie = JSON.stringify(res.data.content)
-      await setCookie(parsedCookie)
-      push("/dashboard")
+      const parsedCookie = JSON.stringify(res.data.content);
+      await setCookie(parsedCookie);
+      refreshUser();
+      push("/dashboard");
     },
     onError: (res: TApiErrorResponse) => {
       toast.error(res.response?.data.message);
@@ -42,7 +46,7 @@ const SignIn = () => {
   return (
     <div
       className={cn(
-        "w-full flex flex-col justify-center max-md:justify-normal max-md:pt-10 items-center gap-10",
+        "w-full flex flex-col justify-center max-md:justify-normal max-md:pt-10 items-center gap-10"
       )}
     >
       <div className="relative w-[30vw] max-md:w-[30vh] h-[30vw] max-md:h-[30vh] rounded-lg overflow-hidden md:hidden">

@@ -52,6 +52,8 @@ import "quill/dist/quill.bubble.css";
 import { Textarea } from "@/components/ui/textarea";
 import { getAllByPostId, postComment } from "@/lib/api/comment";
 import { Spinner } from "@/components/ui/spinner";
+import { useUserStore } from "@/lib/stores/user.store";
+import { useStore } from "zustand";
 
 const ProfileLayout = ({
   data,
@@ -63,6 +65,7 @@ const ProfileLayout = ({
   onRefetchUser: () => void;
 }) => {
   const [edit, setEdit] = useState<Partial<TPost>>();
+  const setUser = useStore(useUserStore, (s) => s.setUser);
   const { mutate: upload, isPending: isUploadingFile } = useMutation({
     mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
       uploadFile(data.file, data.type),
@@ -74,7 +77,9 @@ const ProfileLayout = ({
       onSuccess: async (res) => {
         const cookie = getCookie()
         const currentCookie: TLoginResponse = JSON.parse(cookie || "{}")
-        const parsedCookie = JSON.stringify({ ...currentCookie, ...res.data.content })
+        const newUserData = { ...currentCookie, ...res.data.content }
+        setUser(newUserData)
+        const parsedCookie = JSON.stringify(newUserData)
         await setCookie(parsedCookie)
         toast.success("Profile updated");
         onRefetchUser();
