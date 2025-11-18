@@ -3,8 +3,10 @@ import { TLoginResponse } from "./auth";
 
 const baseUrl = "/user";
 
+export type TResponseUser = Omit<TLoginResponse, "acccess_token">;
+
 export const getUserProfile = (id: number) => {
-  return getMethod<TApiResponse<TLoginResponse>>(`${baseUrl}/${id}`);
+  return getMethod<TApiResponse<TResponseUser>>(`${baseUrl}/${id}`);
 };
 
 export type TUpdatePayload = {
@@ -15,11 +17,12 @@ export type TUpdatePayload = {
 };
 
 export const updateProfile = (payload: TUpdatePayload) => {
-  return putMethod(baseUrl, payload);
+  return putMethod<TUpdatePayload, TApiResponse<TResponseUser>>(
+    baseUrl,
+    payload
+  );
 };
 
 export const getAllUsers = () => {
-  return getMethod<TApiResponse<Omit<TLoginResponse, "acccess_token">[]>>(
-    baseUrl
-  );
+  return getMethod<TApiResponse<TResponseUser[]>>(baseUrl);
 };

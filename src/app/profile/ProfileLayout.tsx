@@ -9,7 +9,7 @@ import {
 } from "@/components/Icons";
 import { Button } from "@/components/ui/Button";
 import { TLoginResponse } from "@/lib/api/auth";
-import { cn, convertDateTime } from "@/lib/utils";
+import { cn, convertDateTime, getCookie, setCookie } from "@/lib/utils";
 import Image from "next/image";
 import { FormEvent, useMemo, useRef, useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
@@ -71,7 +71,11 @@ const ProfileLayout = ({
   const { mutate: updateProfileData, isPending: isUpdatingProfile } =
     useMutation({
       mutationFn: (data: TUpdatePayload) => updateProfile(data),
-      onSuccess: () => {
+      onSuccess: async (res) => {
+        const cookie = getCookie()
+        const currentCookie: TLoginResponse = JSON.parse(cookie || "{}")
+        const parsedCookie = JSON.stringify({ ...currentCookie, ...res.data.content })
+        await setCookie(parsedCookie)
         toast.success("Profile updated");
         onRefetchUser();
       },
@@ -527,7 +531,7 @@ export const BlogEditor = ({
   );
 };
 
-const PostContainer = ({
+export const PostContainer = ({
   userData,
   isVisit,
   onEdit,
@@ -634,7 +638,7 @@ const CommentContainer = ({
       postComment({ user_id: userId!, post_id: postId!, content: comment }),
     onSuccess: async () => {
       toast.success("Comment posted");
-      setComment("")
+      setComment("");
       refetchComments();
     },
     onError: (error: TApiErrorResponse) => {
@@ -693,18 +697,23 @@ const CommentContainer = ({
               )}
             >
               <div className="flex flex-col gap-2.5 border-r border-muted px-5 max-w-[200px]">
-                {!comment.user.picture_url ? (
-                  <UserIcon />
-                ) : (
-                  <div className="relative h-[30px] aspect-square rounded-full overflow-hidden">
-                    <Image
-                      src={comment.user.picture_url}
-                      alt={comment.user.name}
-                      fill
-                    />
-                  </div>
-                )}
-                <span className="w-full text-xs text-muted-foreground">@{comment.user.handle}</span>
+                <div className="flex gap-2.5 items-center">
+                  {!comment.user.picture_url ? (
+                    <UserIcon />
+                  ) : (
+                    <div className="relative h-[30px] aspect-square rounded-full overflow-hidden">
+                      <Image
+                        src={comment.user.picture_url}
+                        alt={comment.user.name}
+                        fill
+                      />
+                    </div>
+                  )}
+                  <span>{comment.user.name}</span>
+                </div>
+                <span className="w-full text-xs text-muted-foreground">
+                  @{comment.user.handle}
+                </span>
               </div>
               <p>{comment.content}</p>
             </div>

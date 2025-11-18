@@ -57,10 +57,10 @@ const PostCard = ({
       <div className="p-4 flex flex-col gap-1">
         <div className="flex gap-10">
           <div className="w-full ql-bubble">
-            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor" onClick={(e) => e.stopPropagation()}>
+            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!" onClick={(e) => e.stopPropagation()}>
               {HTMLReactParser(data.title || "")}
             </div>
-            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor" onClick={(e) => e.stopPropagation()}>
+            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!" onClick={(e) => e.stopPropagation()}>
               {HTMLReactParser(data.sub_title || "")}
             </div>
             <div className="max-md:hidden line-clamp-2 w-fit! h-fit! overflow-hidden! p-0! mt-5 ql-editor" onClick={(e) => e.stopPropagation()}>

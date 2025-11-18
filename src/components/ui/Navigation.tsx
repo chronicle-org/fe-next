@@ -95,7 +95,7 @@ const DropdownNavMenu = () => {
       loading: "Loading...",
       success: async () => {
         await deleteCookie();
-        window.location.href = "/dashboard";
+        push("/auth")
         return "Successfully logged out";
       },
       error: (err: TApiErrorResponse) => {

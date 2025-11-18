@@ -108,8 +108,14 @@ const Content = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {
           dummyLandingPagePosts.map((item) => {
+            const data = {
+              ...item,
+              title: `<h1>${item.title}</h1>`,
+              // style="color: rgb(136, 136, 136);"
+              sub_title: `<p><span style="color: rgb(136, 136, 136);">${item.sub_title}</span></p>`
+            }
             return (
-              <PostCard data={item} key={item.id} />
+              <PostCard data={data} key={item.id} />
             )
           })
         }
