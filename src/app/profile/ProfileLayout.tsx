@@ -54,6 +54,7 @@ import { getAllByPostId, postComment } from "@/lib/api/comment";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
+import { useRouter } from "next/navigation";
 
 const ProfileLayout = ({
   data,
@@ -75,12 +76,12 @@ const ProfileLayout = ({
     useMutation({
       mutationFn: (data: TUpdatePayload) => updateProfile(data),
       onSuccess: async (res) => {
-        const cookie = getCookie()
-        const currentCookie: TLoginResponse = JSON.parse(cookie || "{}")
-        const newUserData = { ...currentCookie, ...res.data.content }
-        setUser(newUserData)
-        const parsedCookie = JSON.stringify(newUserData)
-        await setCookie(parsedCookie)
+        const cookie = getCookie();
+        const currentCookie: TLoginResponse = JSON.parse(cookie || "{}");
+        const newUserData = { ...currentCookie, ...res.data.content };
+        setUser(newUserData);
+        const parsedCookie = JSON.stringify(newUserData);
+        await setCookie(parsedCookie);
         toast.success("Profile updated");
         onRefetchUser();
       },
@@ -328,12 +329,15 @@ const initPayloadData: TAddPostPayload & { thumbnail_file?: File } = {
 export const BlogEditor = ({
   data,
   isVisit,
+  isPostView,
   onBack,
 }: {
   data?: Partial<TPost>;
   isVisit?: boolean;
-  onBack: () => void;
+  isPostView?: boolean;
+  onBack?: () => void;
 }) => {
+  const { push } = useRouter()
   const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
     data || initPayloadData
   );
@@ -360,7 +364,7 @@ export const BlogEditor = ({
 
   const { mutate: submitPost, isPending: isSubmittingPost } = useMutation({
     mutationFn: (data: TAddPostPayload) => addPost(data),
-    onSuccess: () => onBack(),
+    onSuccess: () => onBack?.(),
     onError: (err: TApiErrorResponse) => {
       toast.error(err.response?.data.error);
     },
@@ -369,7 +373,7 @@ export const BlogEditor = ({
   const { mutate: updatePost, isPending: isUpdatingPost } = useMutation({
     mutationFn: (payload: { id: number; data: Partial<TAddPostPayload> }) =>
       editPost(payload.id, payload.data),
-    onSuccess: () => onBack(),
+    onSuccess: () => onBack?.(),
     onError: (err: TApiErrorResponse) => {
       toast.error(err.response?.data.error);
     },
@@ -415,9 +419,11 @@ export const BlogEditor = ({
         className="w-full flex-1 flex flex-col gap-10"
       >
         <div className="flex justify-between items-center">
-          <div className="cursor-pointer" onClick={onBack}>
-            <ChevronIcon color="var(--foreground)" /> Back
-          </div>
+          {onBack && (
+            <div className="cursor-pointer" onClick={onBack}>
+              <ChevronIcon color="var(--foreground)" /> Back
+            </div>
+          )}
 
           {!isVisit && (
             <div className="flex gap-5 self-end items-center">
@@ -529,6 +535,28 @@ export const BlogEditor = ({
               />
             )}
           </div>
+          {isPostView && (
+            <div
+              className="w-fit max-w-[200px] flex gap-2 items-center cursor-pointer"
+              onClick={() => push(`/profile/${data?.user_id}`)}
+            >
+              <div className="relative w-[30px] h-[30px]">
+                <Image
+                  src={data?.user?.picture_url || ""}
+                  alt={data?.user?.name || ""}
+                  fill
+                  className="rounded-full"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <div className="font-semibold">{data?.user?.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  @{data?.user?.handle}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </form>
       {isVisit && <CommentContainer postId={data?.id} userId={data?.user_id} />}
@@ -627,6 +655,7 @@ const CommentContainer = ({
   //   []
   // );
   const { data: comments, refetch: refetchComments } = useQuery({
+    enabled: !!postId,
     queryKey: [`post-${postId}-comments`],
     queryFn: async () => {
       try {

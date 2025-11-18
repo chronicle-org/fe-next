@@ -7,9 +7,11 @@ import { TApiErrorResponse } from "@/lib/api";
 import { getAllPosts } from "@/lib/api/post";
 import { getAllUsers } from "@/lib/api/user";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const Dashboard = () => {
+  const { push } = useRouter()
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -72,7 +74,7 @@ const Dashboard = () => {
                   );
                 })
             : posts.map((post) => {
-                return <PostCard data={post} key={post.id} />;
+                return <PostCard data={post} key={post.id} onClick={() => push(`/post/${post.id}`)} />;
               })}
         </div>
       </div>
