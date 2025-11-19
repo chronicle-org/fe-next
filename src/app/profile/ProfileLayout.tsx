@@ -79,7 +79,7 @@ const ProfileLayout = ({
   const postId = getParam().get("post_id") || "";
 
   const { isFetching: isFetchingParamPostId } = useQuery({
-    enabled: !!postId,
+    enabled: !!postId && !edit,
     queryKey: [`post-data-${+postId}`],
     queryFn: async () => {
       try {
