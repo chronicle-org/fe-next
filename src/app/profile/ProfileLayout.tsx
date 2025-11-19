@@ -83,12 +83,15 @@ const ProfileLayout = ({
     queryKey: [`post-data-${+postId}`],
     queryFn: async () => {
       try {
+        // console.log("masuk")
+        if (!postId.length) throw new Error()
         const res = await findOne(+postId);
         setEdit(res.data.content as TPost);
-        return res.data.content
+        return res.data.content;
       } catch (error) {
+        setEdit(undefined)
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(err.response?.data.error || "Post not found");
       }
     },
   });
@@ -189,7 +192,7 @@ const ProfileLayout = ({
             <PostSkeleton />
           ) : (
             <>
-              {edit ? (
+              {edit && !!postId ? (
                 <BlogEditor
                   data={edit}
                   onBack={() => {
