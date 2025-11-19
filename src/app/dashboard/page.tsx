@@ -39,7 +39,7 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="flex flex-col w-full max-w-[800px] mx-auto py-5 gap-10">
+    <div className="flex flex-col w-[80vw] max-w-[800px] mx-auto py-5 gap-10">
       <div className="flex flex-col gap-2.5">
         <div>Follow</div>
         <div className="flex gap-2.5 overflow-hidden">
@@ -68,7 +68,7 @@ const Dashboard = () => {
                 .map((_, index) => {
                   return (
                     <Skeleton
-                      className="h-[125px] aspect-square rounded-xl"
+                      className="h-[125px] rounded-xl w-full"
                       key={index}
                     />
                   );

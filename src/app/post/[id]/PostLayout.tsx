@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const PostLayout = ({ id }: { id?: number }) => {
+export const PostLayout = ({ id }: { id?: number }) => {
   const { push } = useRouter();
 
   const { data, isFetching } = useQuery({
@@ -28,8 +28,21 @@ const PostLayout = ({ id }: { id?: number }) => {
   });
 
   if (isFetching || !id)
-    return (
-      <div className="w-full max-w-[800px] mx-auto flex flex-col gap-10 py-5">
+    return <PostSkeleton />
+
+  return (
+    <div className="py-10 max-w-[90vw] mx-auto w-full">
+      <BlogEditor data={data} isVisit onBack={() => push("/dashboard")} isPostView />
+    </div>
+  );
+};
+
+export default PostLayout;
+
+
+export const PostSkeleton = () => {
+  return (
+    <div className="w-full max-w-[800px] mx-auto flex flex-col gap-10 py-5">
         <div className="flex gap-5 items-center">
           <div className="flex flex-col gap-2.5 w-full">
             <Skeleton className="h-10 w-full" />
@@ -40,13 +53,5 @@ const PostLayout = ({ id }: { id?: number }) => {
 
         <Skeleton className="w-full aspect-square" />
       </div>
-    );
-
-  return (
-    <div className="py-10 max-w-[90vw] mx-auto w-full">
-      <BlogEditor data={data} isVisit onBack={() => push("/dashboard")} isPostView />
-    </div>
-  );
-};
-
-export default PostLayout;
+  )
+}

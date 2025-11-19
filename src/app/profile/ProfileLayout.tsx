@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { TLoginResponse } from "@/lib/api/auth";
 import { cn, convertDateTime, getCookie, setCookie } from "@/lib/utils";
+import { useUpdateParam } from "@/lib/utils-client";
 import Image from "next/image";
 import { FormEvent, useMemo, useRef, useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
@@ -23,6 +24,7 @@ import dynamic from "next/dynamic";
 import {
   addPost,
   editPost,
+  findOne,
   getAllPostsByUser,
   TAddPostPayload,
   TPost,
@@ -55,18 +57,42 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
 import { useRouter } from "next/navigation";
+import { PostSkeleton } from "../post/[id]/PostLayout";
 
 const ProfileLayout = ({
   data,
+  // postId,
   isVisit = false,
   onRefetchUser,
 }: {
   data: TLoginResponse;
+  // postId?: number
   isVisit?: boolean;
   onRefetchUser: () => void;
 }) => {
   const [edit, setEdit] = useState<Partial<TPost>>();
+
   const setUser = useStore(useUserStore, (s) => s.setUser);
+
+  const { getParam, setParam, removeParam } = useUpdateParam();
+
+  const postId = getParam().get("post_id") || "";
+
+  const { isFetching: isFetchingParamPostId } = useQuery({
+    enabled: !!postId,
+    queryKey: [`post-data-${+postId}`],
+    queryFn: async () => {
+      try {
+        const res = await findOne(+postId);
+        setEdit(res.data.content as TPost);
+        return res.data.content
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
   const { mutate: upload, isPending: isUploadingFile } = useMutation({
     mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
       uploadFile(data.file, data.type),
@@ -136,7 +162,7 @@ const ProfileLayout = ({
           )}
         </div>
 
-        <div className="flex gap-10">
+        <div className="flex max-[880px]:flex-col gap-10">
           <SideProfile
             data={data}
             isPending={isUploadingFile || isUpdatingProfile}
@@ -159,14 +185,30 @@ const ProfileLayout = ({
             }}
             onUpdateProfile={updateProfileData}
           />
-          {edit ? (
-            <BlogEditor
-              data={edit}
-              onBack={() => setEdit(undefined)}
-              isVisit={isVisit}
-            />
+          {isFetchingParamPostId ? (
+            <PostSkeleton />
           ) : (
-            <PostContainer userData={data} onEdit={setEdit} isVisit={isVisit} />
+            <>
+              {edit ? (
+                <BlogEditor
+                  data={edit}
+                  onBack={() => {
+                    removeParam("post_id");
+                    setEdit(undefined);
+                  }}
+                  isVisit={isVisit}
+                />
+              ) : (
+                <PostContainer
+                  userData={data}
+                  onEdit={(post) => {
+                    setParam("post_id", (post.id as number).toString());
+                    setEdit(post);
+                  }}
+                  isVisit={isVisit}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
@@ -197,7 +239,12 @@ const SideProfile = ({
     onUpdateProfile(formData);
   };
   return (
-    <div className="flex flex-col gap-5 border-r border-muted p-10">
+    <div
+      className={cn(
+        "flex min-[881px]:flex-col gap-5 min-[881px]:border-r",
+        "max-[880px]:border-b border-muted p-10 max-lg:p-5"
+      )}
+    >
       {/* PROFILE PICTURE */}
       {!isVisit ? (
         <div className="w-[200px] h-[200px]">
@@ -213,16 +260,21 @@ const SideProfile = ({
           />
         </div>
       ) : data.picture_url ? (
-        <Image
-          src={data.picture_url}
-          alt={data.picture_url}
-          width={400}
-          height={400}
+        <div
           className={cn(
-            "rounded-full max-w-[200px] max-h-[200px] w-[50vw] h-[50vh] object-cover",
-            "border border-foreground bg-accent-foreground shrink"
+            "relative rounded-full aspect-square",
+            "max-w-[200px] w-full min-w-[100px]",
+            "border border-foreground bg-accent-foreground",
+            "overflow-hidden h-fit"
           )}
-        />
+        >
+          <Image
+            src={data.picture_url}
+            alt={data.picture_url}
+            fill
+            className="object-cover"
+          />
+        </div>
       ) : (
         <UserIcon
           width={200}
@@ -231,7 +283,7 @@ const SideProfile = ({
         />
       )}
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 max-w-full min-w-0">
         {isEdit ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <FancyInput
@@ -254,21 +306,25 @@ const SideProfile = ({
           </form>
         ) : (
           <>
-            <div className="items-center">
-              <div>{data.name}</div>
-              <div className="text-sm text-muted-foreground">
+            <div className="items-center shrink">
+              <div className="wrap-anywhere break-all line-clamp-1">
+                {data.name}
+              </div>
+              <div className="text-sm text-muted-foreground wrap-anywhere break-all line-clamp-1">
                 @{data.handle}
               </div>
               <div className="flex items-center gap-1">
                 <Link
                   href={`mailto:${data.email}`}
-                  className="text-sm text-blue-500"
+                  className="text-sm text-blue-500 wrap-anywhere break-all line-clamp-1"
                 >
                   {data.email}
                 </Link>
               </div>
             </div>
-            <div>{data.profile_description}</div>
+            <div className="wrap-anywhere break-all line-clamp-1">
+              {data.profile_description}
+            </div>
             <div className="flex items-center text-muted-foreground text-sm gap-1">
               <Calendar1Icon height={16} width={16} />
               {convertDateTime({
@@ -337,7 +393,7 @@ export const BlogEditor = ({
   isPostView?: boolean;
   onBack?: () => void;
 }) => {
-  const { push } = useRouter()
+  const { push } = useRouter();
   const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
     data || initPayloadData
   );
@@ -498,7 +554,7 @@ export const BlogEditor = ({
             {isVisit ? (
               <>
                 {data?.thumbnail_url ? (
-                  <div className="relative w-full aspect-square">
+                  <div className="relative w-full max-w-[50vw] mx-auto aspect-square">
                     <Image
                       src={data?.thumbnail_url}
                       alt={"thumbnail"}

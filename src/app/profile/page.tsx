@@ -7,9 +7,13 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProfileLayout from "./ProfileLayout";
+// import { useUpdateParam } from "@/lib/utils-client";
 
 const Profile = () => {
   const cookie: TLoginResponse = JSON.parse(getCookie() || "{}");
+  // const { getParam } = useUpdateParam();
+  // const postId = getParam().get("post_id") || ""
+
   const { data, refetch } = useQuery({
     queryKey: [`user-data-${cookie.id}`],
     placeholderData: keepPreviousData,

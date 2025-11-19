@@ -46,10 +46,11 @@ const PostCard = ({
             src={data.thumbnail_url}
             alt={data.id?.toString() || ""}
             fill
+            objectFit="cover"
           />
         ) : (
-          <div className="flex justify-center items-center w-full">
-            <PlaceholderImageIcon />
+          <div className="flex justify-center items-center w-full h-full">
+            <PlaceholderImageIcon className="h-full w-full aspect-square" />
           </div>
         )}
       </div>
@@ -77,8 +78,8 @@ const PostCard = ({
                 className="object-cover rounded-2xl"
               />
             ) : (
-              <div className="flex justify-center items-center w-full">
-                <PlaceholderImageIcon />
+              <div className="flex justify-center items-center w-full h-full">
+                <PlaceholderImageIcon className="h-full w-full aspect-square" />
               </div>
             )}
           </div>
