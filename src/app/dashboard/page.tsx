@@ -42,7 +42,7 @@ const Dashboard = () => {
     <div className="flex flex-col w-[80vw] max-w-[800px] mx-auto py-5 gap-10">
       <div className="flex flex-col gap-2.5">
         <div>Follow</div>
-        <div className="flex gap-2.5 overflow-hidden">
+        <div className="flex gap-2.5 overflow-hidden overflow-x-auto">
           {!users || !users.length
             ? Array(5)
                 .fill("")
