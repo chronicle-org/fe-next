@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { deleteCookie } from "@/lib/utils";
-import { logUserOut } from "@/lib/api/auth";
+import { logUserOut, TLoginResponse } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
 import { UserIcon } from "lucide-react";
@@ -23,6 +23,7 @@ const Navigation = () => {
   const { theme, setTheme } = useTheme();
   const { push } = useRouter();
   const pathname = usePathname();
+  const user = useStore(useUserStore, (s) => s.user);
 
   const onToggleTheme = () => {
     switch (theme) {
@@ -48,7 +49,7 @@ const Navigation = () => {
         suppressHydrationWarning
       >
         <li className="flex items-center">
-          <Link href="/" className="flex gap-1 w-fit items-center">
+          <Link href={!!user ? "/dashboard" : "/"} className="flex gap-1 w-fit items-center">
             <Image
               src={"/chronicle-icon.png"}
               alt="Chronicle"
@@ -77,7 +78,7 @@ const Navigation = () => {
               <span className="capitalize min-w-11 text-start">{theme}</span>
             </Button>
             {pathname !== "/" && !pathname.includes("auth") && (
-              <DropdownNavMenu />
+              <DropdownNavMenu user={user} />
             )}
           </div>
         </li>
@@ -88,10 +89,9 @@ const Navigation = () => {
 
 export default Navigation;
 
-const DropdownNavMenu = () => {
+const DropdownNavMenu = ({ user }: { user:  TLoginResponse | null }) => {
   const { push } = useRouter();
 
-  const user = useStore(useUserStore, (s) => s.user);
   const setUser = useStore(useUserStore, (s) => s.setUser);
 
   const handleLogout = () => {
