@@ -43,15 +43,15 @@ export default PostLayout;
 export const PostSkeleton = () => {
   return (
     <div className="w-full max-w-[800px] mx-auto flex flex-col gap-10 py-5">
-        <div className="flex gap-5 items-center">
-          <div className="flex flex-col gap-2.5 w-full">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <Skeleton className="h-[200px] aspect-square" />
+      <div className="flex gap-5 items-center">
+        <div className="flex flex-col gap-2.5 w-full">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
-
-        <Skeleton className="w-full aspect-square" />
+        <Skeleton className="h-[200px] aspect-square" />
       </div>
+
+      <Skeleton className="w-full aspect-square" />
+    </div>
   )
 }

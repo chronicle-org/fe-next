@@ -20,6 +20,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Chronicle",
   description: "Share your stories with the world.",
+  openGraph: {
+    title: "Chronicle",
+    description: "Share your stories with the world.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chronicle",
+    description: "Share your stories with the world.",
+  },
 };
 
 export default async function RootLayout({
