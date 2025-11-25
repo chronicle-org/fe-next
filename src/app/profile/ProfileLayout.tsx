@@ -620,7 +620,7 @@ export const BlogEditor = ({
           )}
         </div>
       </form>
-      {isVisit && <CommentSection postId={data?.id} userId={user?.id} />}
+      {isVisit && user && <CommentSection postId={data?.id} userId={user?.id} />}
     </div>
   );
 };

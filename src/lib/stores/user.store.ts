@@ -16,7 +16,7 @@ export const useUserStore = create<UserStore>((set) => {
   if (raw) {
     try {
       initial = JSON.parse(raw);
-    } catch {}
+    } catch { }
   }
 
   return {
