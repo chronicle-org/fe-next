@@ -71,7 +71,7 @@ const ProfileLayout = ({
   isVisit?: boolean;
   onRefetchUser: () => void;
 }) => {
-  const [edit, setEdit] = useState<Partial<TPost>>();
+  const [edit, setEdit] = useState<{ status?: boolean, data?: Partial<TPost> }>();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
 
@@ -87,10 +87,10 @@ const ProfileLayout = ({
         // console.log("masuk")
         if (!postId.length) throw new Error()
         const res = await findOne(+postId);
-        setEdit(res.data.content as TPost);
+        setEdit({ status: true, data: res.data.content as TPost });
         return res.data.content;
       } catch (error) {
-        setEdit(undefined)
+        setEdit({ status: false })
         const err = error as TApiErrorResponse;
         toast.error(err.response?.data.error || "Post not found");
       }
@@ -193,12 +193,12 @@ const ProfileLayout = ({
             <PostSkeleton />
           ) : (
             <>
-              {edit && !!postId ? (
+              {edit?.status ? (
                 <BlogEditor
-                  data={edit}
+                  data={edit.data}
                   onBack={() => {
                     removeParam("post_id");
-                    setEdit(undefined);
+                    setEdit({ status: false });
                   }}
                   isVisit={isVisit}
                 />
@@ -206,8 +206,9 @@ const ProfileLayout = ({
                 <PostContainer
                   userData={data}
                   onEdit={(post) => {
-                    setParam("post_id", (post.id as number).toString());
-                    setEdit(post);
+                    setEdit({ status: true, data: post });
+                    if (post.id)
+                      setParam("post_id", (post.id as number).toString());
                   }}
                   isVisit={isVisit}
                 />
