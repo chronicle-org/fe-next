@@ -6,12 +6,13 @@ import UserCard from "@/components/ui/UserCard";
 import { TApiErrorResponse } from "@/lib/api";
 import { getAllPosts } from "@/lib/api/post";
 import { getAllUsers } from "@/lib/api/user";
+import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const Dashboard = () => {
-  const { push } = useRouter()
+  const { push } = useRouter();
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -25,16 +26,22 @@ const Dashboard = () => {
     },
   });
 
-  const { data: posts } = useQuery({
-    queryKey: ["posts"],
-    queryFn: async () => {
-      try {
-        const res = await getAllPosts();
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
+  const { data: posts, isLoading } = usePaginationQuery({
+    queryKey: (state) => ["posts", state],
+    fetchFunction: async (params) => {
+      const { filters, ...rest } = params;
+      return getAllPosts({
+        ...rest,
+        search: filters.search,
+      });
+    },
+    fetchOnce: true,
+    initPage: 1,
+    initFilters: {
+      search: "",
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.error);
     },
   });
 
@@ -62,7 +69,7 @@ const Dashboard = () => {
       <div className="flex flex-col gap-2.5">
         <div>Posts</div>
         <div className="flex flex-col gap-2.5 overflow-hidden">
-          {!posts || !posts.length
+          {isLoading
             ? Array(5)
                 .fill("")
                 .map((_, index) => {
@@ -73,8 +80,14 @@ const Dashboard = () => {
                     />
                   );
                 })
-            : posts.map((post) => {
-                return <PostCard data={post} key={post.id} onClick={() => push(`/post/${post.id}`)} />;
+            : posts?.map((post) => {
+                return (
+                  <PostCard
+                    data={post}
+                    key={post.id}
+                    onClick={() => push(`/post/${post.id}`)}
+                  />
+                );
               })}
         </div>
       </div>

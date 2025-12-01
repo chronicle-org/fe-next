@@ -24,5 +24,9 @@ export function InfiniteScroll({ loadMore, hasMore }: InfiniteScrollProps) {
     };
   }, [hasMore, loadMore]);
 
-  return <div ref={loaderRef} className="py-6 text-center">Loading more...</div>;
+  return (
+    <div ref={loaderRef} className="py-6 text-center">
+      {hasMore ? "Loading more..." : "No more posts"}
+    </div>
+  );
 }

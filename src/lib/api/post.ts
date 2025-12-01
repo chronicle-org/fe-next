@@ -4,6 +4,8 @@ import {
   postMethod,
   putMethod,
   TApiResponse,
+  TApiResponsePagination,
+  TPaginationParam,
 } from ".";
 import { TLoginResponse } from "./auth";
 
@@ -19,15 +21,27 @@ export type TPost = {
   comment_count: number;
   created_at: string;
   updated_at: string;
+  visibility: boolean;
   user: Partial<TLoginResponse>;
 };
 
-export const getAllPosts = async () => {
-  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}`);
+type TFetchFunctionParams = TPaginationParam & {
+  search: string;
 };
 
-export const getAllPostsByUser = async (id: number) => {
-  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/user/${id}`);
+export const getAllPosts = async (params: TFetchFunctionParams) => {
+  return getMethod<TApiResponsePagination<TPost[]>>(
+    `${baseUrl}?page=${params.page}&limit=${params.limit}&search=${params.search}`
+  );
+};
+
+export const getAllPostsByUser = async (
+  id: number,
+  params: TFetchFunctionParams
+) => {
+  return getMethod<TApiResponsePagination<TPost[]>>(
+    `${baseUrl}/user/${id}?page=${params.page}&limit=${params.limit}&search=${params.search}`
+  );
 };
 
 export const findOne = async (id: number) => {
@@ -42,8 +56,14 @@ export const addPost = async (payload: TAddPostPayload) => {
   return postMethod<typeof payload, TApiResponse<TPost>>(`${baseUrl}`, payload);
 };
 
-export const editPost = async (id: number, payload: Partial<TAddPostPayload>) => {
-  return putMethod<typeof payload, TApiResponse<TPost>>(`${baseUrl}/${id}`, payload);
+export const editPost = async (
+  id: number,
+  payload: Partial<TAddPostPayload>
+) => {
+  return putMethod<typeof payload, TApiResponse<TPost>>(
+    `${baseUrl}/${id}`,
+    payload
+  );
 };
 
 export const deletePost = async (id: number) => {

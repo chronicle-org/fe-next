@@ -1,4 +1,4 @@
-import { getMethod, postMethod, TApiResponse } from ".";
+import { deleteMethod, getMethod, postMethod, TApiResponse } from ".";
 import { TLoginResponse } from "./auth";
 
 const baseUrl = "/comment";
@@ -24,4 +24,8 @@ export const postComment = (
     `${baseUrl}`,
     payload
   );
+};
+
+export const deleteComment = (id: number) => {
+  return deleteMethod<TApiResponse<TComment>>(`${baseUrl}/${id}`);
 };

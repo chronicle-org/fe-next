@@ -3,27 +3,33 @@
 import PostCard from "@/components/ui/PostCard";
 import { getAllPosts } from "@/lib/api/post";
 import Image from "next/image";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
 
 export default function Home() {
-  const [search, setSearch] = useState("");
   const { push } = useRouter();
 
-  const { data: posts, isFetching } = useQuery({
-    queryKey: ["posts"],
-    queryFn: async () => {
-      const res = await getAllPosts();
-      return res.data.content;
+  const {
+    data: posts,
+    isLoading,
+    setFilters,
+  } = usePaginationQuery({
+    queryKey: (state) => ["posts", state],
+    fetchFunction: async (params) => {
+      const { filters, ...rest } = params;
+      return getAllPosts({
+        ...rest,
+        search: filters.search,
+      });
+    },
+    fetchOnce: true,
+    initPage: 1,
+    initFilters: {
+      search: "",
     },
   });
-
-  const filteredPosts = posts?.filter((post) =>
-    post.title.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="px-20 max-lg:px-10 flex flex-col gap-10 lg:pt-10 pb-10">
@@ -33,16 +39,22 @@ export default function Home() {
           <p className="text-lg text-muted-foreground font-semibold">
             What are they writing here...
           </p>
-          <SearchBar value={search} onChange={setSearch} />
+          <SearchBar
+            debounce={500}
+            onChange={(value) => {
+              setFilters({ search: value });
+            }}
+            // shortcut="s"
+          />
         </div>
 
-        {isFetching ? (
+        {isLoading ? (
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-            {filteredPosts?.map((item) => (
+            {posts?.map((item) => (
               <PostCard
                 data={item}
                 key={item.id}
@@ -77,5 +89,5 @@ const Heading = () => {
         className="rounded-md"
       />
     </div>
-  )
-}
+  );
+};

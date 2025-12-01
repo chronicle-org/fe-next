@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export const PostLayout = ({ id }: { id?: number }) => {
-  const { push } = useRouter();
+  const { push, back } = useRouter();
 
   const { data, isFetching } = useQuery({
     enabled: id !== undefined,
@@ -27,18 +27,16 @@ export const PostLayout = ({ id }: { id?: number }) => {
     },
   });
 
-  if (isFetching || !id)
-    return <PostSkeleton />
+  if (isFetching || !id) return <PostSkeleton />;
 
   return (
     <div className="py-10 max-w-[90vw] mx-auto w-full">
-      <BlogEditor data={data} isVisit onBack={() => push("/dashboard")} isPostView />
+      <BlogEditor data={data} isVisit onBack={() => back()} isPostView />
     </div>
   );
 };
 
 export default PostLayout;
-
 
 export const PostSkeleton = () => {
   return (
@@ -53,5 +51,5 @@ export const PostSkeleton = () => {
 
       <Skeleton className="w-full aspect-square" />
     </div>
-  )
-}
+  );
+};

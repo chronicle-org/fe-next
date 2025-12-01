@@ -13,34 +13,63 @@ instance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await deleteCookie()
-      window.location.href = "/auth"
+      await deleteCookie();
+      window.location.href = "/auth";
     }
     return Promise.reject(error);
   }
 );
 
 export type TApiResponse<T = unknown> = {
-  content?: T | null
-  message: string
-  error: string
-  statusCode: number
+  content?: T | null;
+  message: string;
+  error: string;
+  statusCode: number;
 };
 
-export type TApiErrorResponse = AxiosError<TApiResponse>
+export type TPaginationParam = {
+  page: number;
+  limit: number;
+};
 
-export function getMethod<TData>(endpoint:string, config?: AxiosRequestConfig): Promise<AxiosResponse<TData>> {
+export type TApiResponsePagination<T = unknown> = Omit<
+  TApiResponse,
+  "content"
+> & {
+  content?: {
+    data?: T | null;
+    total: number;
+  };
+};
+
+export type TApiErrorResponse = AxiosError<TApiResponse>;
+
+export function getMethod<TData>(
+  endpoint: string,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<TData>> {
   return instance.get(endpoint, config);
 }
 
-export function postMethod<TPayloadPost, TData>(endpoint:string, payload?:TPayloadPost, config?: AxiosRequestConfig): Promise<AxiosResponse<TData>>{
+export function postMethod<TPayloadPost, TData>(
+  endpoint: string,
+  payload?: TPayloadPost,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<TData>> {
   return instance.post(endpoint, payload, config);
 }
 
-export function putMethod<TPayloadPut, TData>(endpoint:string, payload?:TPayloadPut, config?:AxiosRequestConfig): Promise<AxiosResponse<TData>> {
+export function putMethod<TPayloadPut, TData>(
+  endpoint: string,
+  payload?: TPayloadPut,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<TData>> {
   return instance.put(endpoint, payload, config);
 }
 
-export function deleteMethod<TData>(endpoint:string, config?:AxiosRequestConfig): Promise<AxiosResponse<TData>> {
+export function deleteMethod<TData>(
+  endpoint: string,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<TData>> {
   return instance.delete(endpoint, config);
 }
