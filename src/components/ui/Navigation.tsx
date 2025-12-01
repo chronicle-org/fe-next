@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { Button } from "./Button";
 import { DarkModeIcon, LightModeIcon } from "../Icons";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +18,14 @@ import { TApiErrorResponse } from "@/lib/api";
 import { UserIcon } from "lucide-react";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
+import { SearchBar } from "./SearchBar";
 
 const Navigation = () => {
   const { theme, setTheme } = useTheme();
   const { push } = useRouter();
   const pathname = usePathname();
   const user = useStore(useUserStore, (s) => s.user);
+  const searchParams = useSearchParams();
 
   const onToggleTheme = () => {
     switch (theme) {
@@ -49,7 +51,10 @@ const Navigation = () => {
         suppressHydrationWarning
       >
         <li className="flex items-center">
-          <Link href={!!user ? "/dashboard" : "/"} className="flex gap-1 w-fit items-center">
+          <Link
+            href={!!user ? "/dashboard" : "/"}
+            className="flex gap-1 w-fit items-center"
+          >
             <Image
               src={"/chronicle-icon.png"}
               alt="Chronicle"
@@ -59,6 +64,18 @@ const Navigation = () => {
             />
             Chronicle
           </Link>
+        </li>
+        <li className="flex items-center justify-center">
+          <SearchBar
+            key={
+              pathname.includes("search") ? "search-active" : "search-inactive"
+            }
+            defaultValue={
+              pathname.includes("search") ? searchParams.get("q") || "" : ""
+            }
+            onSubmit={(value) => push(`/search?q=${value}`)}
+            shortcut={"/"}
+          />
         </li>
         <li>
           <div className="flex justify-end items-center gap-4 min-h-9">
@@ -89,7 +106,7 @@ const Navigation = () => {
 
 export default Navigation;
 
-const DropdownNavMenu = ({ user }: { user:  TLoginResponse | null }) => {
+const DropdownNavMenu = ({ user }: { user: TLoginResponse | null }) => {
   const { push } = useRouter();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);

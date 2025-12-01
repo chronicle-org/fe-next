@@ -1,21 +1,23 @@
-"use client"
-
+"use client";
 
 import { TPost } from "@/lib/api/post";
 import Image from "next/image";
-import { CommentIcon, PlaceholderImageIcon } from "../Icons";
+import { CommentIcon, DeleteIcon, PlaceholderImageIcon } from "../Icons";
 import dayjs from "dayjs";
 import { useMemo } from "react";
 import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
 import { cn } from "@/lib/utils";
+import { Button } from "./Button";
 
 const PostCard = ({
   data,
   onClick,
+  onDelete,
 }: {
   data: Partial<TPost>;
   onClick?: () => void;
+  onDelete?: () => void;
 }) => {
   const postCreateRelativeTime = useMemo(() => {
     const createdDate = dayjs(data.created_at);
@@ -53,18 +55,39 @@ const PostCard = ({
             <PlaceholderImageIcon className="h-full w-full aspect-square" />
           </div>
         )}
+        {onDelete && (
+          <Button
+            className="absolute top-2 right-2 p-1! h-fit"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            variant={"destructive"}
+          >
+            <DeleteIcon color="white" />
+          </Button>
+        )}
       </div>
 
       <div className="p-4 flex flex-col gap-1">
         <div className="flex gap-10">
           <div className="w-full ql-bubble">
-            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!"
+              onClick={(e) => e.stopPropagation()}
+            >
               {HTMLReactParser(data.title || "")}
             </div>
-            <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!"
+              onClick={(e) => e.stopPropagation()}
+            >
               {HTMLReactParser(data.sub_title || "")}
             </div>
-            <div className="max-md:hidden line-clamp-2 w-fit! h-fit! overflow-hidden! p-0! mt-5 ql-editor" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="max-md:hidden line-clamp-2 w-fit! h-fit! overflow-hidden! p-0! mt-5 ql-editor"
+              onClick={(e) => e.stopPropagation()}
+            >
               {HTMLReactParser(data.content || "")}
             </div>
           </div>
@@ -81,6 +104,18 @@ const PostCard = ({
               <div className="flex justify-center items-center w-full h-full">
                 <PlaceholderImageIcon className="h-full w-full aspect-square" />
               </div>
+            )}
+            {onDelete && (
+              <Button
+                className="absolute top-2 right-2 p-1! h-fit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                variant={"destructive"}
+              >
+                <DeleteIcon color="white" />
+              </Button>
             )}
           </div>
         </div>

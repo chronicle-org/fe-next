@@ -23,6 +23,7 @@ import {
 import dynamic from "next/dynamic";
 import {
   addPost,
+  deletePost,
   editPost,
   findOne,
   getAllPostsByUser,
@@ -53,12 +54,14 @@ import { TUpdatePayload, updateProfile } from "@/lib/api/user";
 import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
 import { Textarea } from "@/components/ui/textarea";
-import { getAllByPostId, postComment } from "@/lib/api/comment";
+import { deleteComment, getAllByPostId, postComment } from "@/lib/api/comment";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
 import { useRouter } from "next/navigation";
 import { PostSkeleton } from "../post/[id]/PostLayout";
+import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
+import { Modal } from "@/components/ui/Modal";
 
 const ProfileLayout = ({
   data,
@@ -71,7 +74,10 @@ const ProfileLayout = ({
   isVisit?: boolean;
   onRefetchUser: () => void;
 }) => {
-  const [edit, setEdit] = useState<{ status?: boolean, data?: Partial<TPost> }>();
+  const [edit, setEdit] = useState<{
+    status?: boolean;
+    data?: Partial<TPost>;
+  }>();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
 
@@ -85,12 +91,12 @@ const ProfileLayout = ({
     queryFn: async () => {
       try {
         // console.log("masuk")
-        if (!postId.length) throw new Error()
+        if (!postId.length) throw new Error();
         const res = await findOne(+postId);
         setEdit({ status: true, data: res.data.content as TPost });
         return res.data.content;
       } catch (error) {
-        setEdit({ status: false })
+        setEdit({ status: false });
         const err = error as TApiErrorResponse;
         toast.error(err.response?.data.error || "Post not found");
       }
@@ -122,7 +128,7 @@ const ProfileLayout = ({
     });
 
   return (
-    <div className="my-10 mx-auto flex flex-col gap-10 w-full max-w-[80vw]">
+    <div className="sm:my-10 sm:mx-auto flex flex-col gap-10 w-full sm:max-w-[80vw]">
       <div className="flex flex-col gap-10 relative w-full">
         {/* BANNER */}
         <div className="relative w-full h-[200px]">
@@ -157,7 +163,7 @@ const ProfileLayout = ({
                   src={data.banner_url || ""}
                   alt={data.banner_url || ""}
                   fill
-                  className="absolute border border-foreground rounded-2xl"
+                  className="absolute sm:border border-foreground sm:rounded-2xl"
                 />
               ) : (
                 <ImageIcon className="w-full h-full self-center text-muted-foreground border border-muted rounded-2xl" />
@@ -268,7 +274,7 @@ const SideProfile = ({
         <div
           className={cn(
             "relative rounded-full aspect-square",
-            "max-w-[200px] w-full min-w-[100px]",
+            "max-w-[200px] w-full shrink lg:min-w-[200px] min-w-[100px]",
             "border border-foreground bg-accent-foreground",
             "overflow-hidden h-fit"
           )}
@@ -288,7 +294,7 @@ const SideProfile = ({
         />
       )}
 
-      <div className="flex flex-col gap-5 max-w-full min-w-0">
+      <div className="flex flex-col gap-5 max-w-full w-full sm:min-w-0">
         {isEdit ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <FancyInput
@@ -621,7 +627,23 @@ export const BlogEditor = ({
           )}
         </div>
       </form>
-      {isVisit && user && <CommentSection postId={data?.id} userId={user?.id} />}
+      {user && (
+        <CommentSection
+          postId={data?.id}
+          postOwnerId={data?.user_id}
+          userId={user?.id}
+          onDelete={(id, cbRefresh) => {
+            toast.promise(deleteComment(id), {
+              loading: "Deleting comment...",
+              success: () => {
+                cbRefresh();
+                return "Comment deleted successfully";
+              },
+              error: "Failed to delete comment",
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -635,6 +657,9 @@ export const PostContainer = ({
   isVisit?: boolean;
   onEdit: (data: Partial<TPost>) => void;
 }) => {
+  const [modal, setModal] = useState<{ show: boolean; data?: TPost }>({
+    show: false,
+  });
   // const {
   //   data,
   //   fetchNextPage,
@@ -646,55 +671,96 @@ export const PostContainer = ({
   //   getNextPageParam: (lastPage) => lastPage.nextPage ?? false,
   // });
 
-  const { data: postsData, isFetching: isFetchingPostsData } = useQuery({
-    queryKey: [`user-${userData.id}-posts`],
-    placeholderData: keepPreviousData,
-    queryFn: async () => {
-      try {
-        const res = await getAllPostsByUser(userData.id);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
+  const {
+    data: postsData,
+    isLoading: isLoadingPostsData,
+    refetch,
+  } = usePaginationQuery({
+    queryKey: (state) => ["posts", state],
+    fetchFunction: async (params) => {
+      const { filters, ...rest } = params;
+      return getAllPostsByUser(userData.id, {
+        ...rest,
+        search: filters.search,
+      });
+    },
+    fetchOnce: true,
+    initPage: 1,
+    initFilters: {
+      search: "",
+    },
+    onError: (error) => {
+      toast.error(error.response?.data.error);
+    },
+  });
+
+  const { mutate: onDelete, isPending: isPendingDelete } = useMutation({
+    mutationFn: (id: number) => deletePost(id),
+    onSuccess: () => {
+      toast.success("Post deleted successfully");
+      setModal({ show: false });
+      refetch();
+    },
+    onError: (error: TApiErrorResponse) => {
+      toast.error(error.response?.data.error);
     },
   });
 
   return (
-    <div className="flex flex-col gap-5 w-full max-w-[800px] mx-auto">
-      {!isVisit && (
-        <Button
-          variant={"secondary"}
-          className="w-fit self-end"
-          onClick={() => onEdit(initPayloadData)}
-        >
-          <PlusSquareIcon />
-          New
-        </Button>
-      )}
-      {isFetchingPostsData ? (
-        <div className="flex flex-wrap w-full gap-2.5">
-          {Array(3)
-            .fill("")
-            .map((_, index) => {
-              return (
-                <Skeleton className="h-[125px] w-full rounded-xl" key={index} />
-              );
-            })}
-        </div>
-      ) : !postsData?.length ? (
-        <div className="flex flex-col gap-5 mx-auto items-center text-muted-foreground flex-1 justify-center">
-          <BookIcon width={50} height={50} />
-          <p>{isVisit ? "No post found" : "Start creating your story"}</p>
-        </div>
-      ) : (
-        postsData.map((post) => {
-          return (
-            <PostCard data={post} key={post.id} onClick={() => onEdit(post)} />
-          );
-        })
-      )}
-    </div>
+    <>
+      <Modal
+        isOpen={modal.show}
+        onClose={() => setModal({ show: false })}
+        title="Delete Post"
+        showCloseIcon
+        onConfirm={() => onDelete(modal.data?.id as number)}
+        isLoading={isPendingDelete}
+      >
+        <p>Are you sure you want to delete this post?</p>
+      </Modal>
+      <div className="flex flex-col gap-5 w-full max-w-[800px] mx-auto max-sm:px-5">
+        {!isVisit && (
+          <Button
+            variant={"secondary"}
+            className="w-fit self-end"
+            onClick={() => onEdit(initPayloadData)}
+          >
+            <PlusSquareIcon />
+            New
+          </Button>
+        )}
+        {isLoadingPostsData ? (
+          <div className="flex flex-wrap w-full gap-2.5">
+            {Array(3)
+              .fill("")
+              .map((_, index) => {
+                return (
+                  <Skeleton
+                    className="h-[125px] w-full rounded-xl"
+                    key={index}
+                  />
+                );
+              })}
+          </div>
+        ) : !postsData?.length ? (
+          <div className="flex flex-col gap-5 mx-auto items-center text-muted-foreground flex-1 justify-center">
+            <BookIcon width={50} height={50} />
+            <p>{isVisit ? "No post found" : "Start creating your story"}</p>
+          </div>
+        ) : (
+          postsData.map((post) => {
+            return (
+              <PostCard
+                data={post}
+                key={post.id}
+                onClick={() => onEdit(post)}
+                onDelete={() => setModal({ show: true, data: post })}
+              />
+            );
+          })
+        )}
+      </div>
+    </>
   );
 };
 
@@ -703,5 +769,3 @@ export const PostContainer = ({
 //     <div ></div>
 //   )
 // }
-
-

@@ -1,21 +1,23 @@
-import { clsx, type ClassValue } from "clsx"
+import { clsx, type ClassValue } from "clsx";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
 import { NextRequest } from "next/server";
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 // COOKIE
 const cookieName = "chronicle_access_token";
-export const localCookieName = `${cookieName}_local`
+export const localCookieName = `${cookieName}_local`;
 
 export function setCookie(value: string, days = 1): void {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${localCookieName}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+  document.cookie = `${localCookieName}=${encodeURIComponent(
+    value
+  )};expires=${expires.toUTCString()};path=/`;
 }
 
 export function getCookie(serverRequest?: NextRequest): string | null {
@@ -35,7 +37,15 @@ export function deleteCookie(): void {
 }
 //
 
-export function convertDateTime({ date, format, isLocaleId }: { date?: string; format: string; isLocaleId?: boolean; }) {
+export function convertDateTime({
+  date,
+  format,
+  isLocaleId,
+}: {
+  date?: string;
+  format: string;
+  isLocaleId?: boolean;
+}) {
   if (!date) return "-";
   let dayjsDate = dayjs(date);
   if (isLocaleId) {
@@ -45,3 +55,10 @@ export function convertDateTime({ date, format, isLocaleId }: { date?: string; f
   return dayjsDate.format(format);
 }
 
+export const debounce = (func: Function, delay: number) => {
+  let timer: NodeJS.Timeout;
+  return function (this: any, ...args: any) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+};

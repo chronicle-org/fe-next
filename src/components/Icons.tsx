@@ -4,6 +4,8 @@ type IconProps = Partial<PropsWithoutRef<SVGElement>> & {
   height?: string | number;
   width?: string | number;
   color?: string;
+  className?: string;
+  onClick?: () => void;
 };
 
 export const DeleteIcon = ({
@@ -14,6 +16,7 @@ export const DeleteIcon = ({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 -960 960 960"
       height={height}
       width={width}
       fill={color}
@@ -81,6 +84,8 @@ export const CloseIcon = ({
   height = "24px",
   width = "24px",
   color = "#e3e3e3",
+  className,
+  onClick,
 }: IconProps) => {
   return (
     <svg
@@ -89,6 +94,8 @@ export const CloseIcon = ({
       viewBox="0 -960 960 960"
       width={width}
       fill={color}
+      className={className}
+      onClick={onClick}
     >
       <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
     </svg>
@@ -237,14 +244,14 @@ const chevronDirection = {
   default: "",
   top: "90",
   right: "180",
-  bottom: "-90"
-}
+  bottom: "-90",
+};
 
 export function ChevronIcon({
   width = "24",
   height = "24",
   color = "#e3e3e3",
-  direction = "default"
+  direction = "default",
 }: IconProps & { direction?: keyof typeof chevronDirection }) {
   return (
     <svg
