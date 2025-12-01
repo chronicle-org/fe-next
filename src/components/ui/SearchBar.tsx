@@ -32,7 +32,7 @@ export const SearchBar = ({
       if (shortcut && e.key === shortcut) {
         e.preventDefault();
 
-        var searchInput = inputRef.current;
+        const searchInput = inputRef.current;
 
         if (
           /^(?:input|textarea|select|button)$/i.test(
