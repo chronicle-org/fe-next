@@ -113,7 +113,7 @@ export const SearchBar = ({
         <div
           ref={shortcutRef}
           className={cn(
-            "absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-2 border",
+            "absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-2 border max-sm:hidden",
             "text-muted-foreground rounded-sm text-xs flex items-center justify-center"
           )}
         >

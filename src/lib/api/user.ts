@@ -1,5 +1,6 @@
-import { getMethod, putMethod, TApiResponse } from ".";
+import { getMethod, postMethod, putMethod, TApiResponse } from ".";
 import { TLoginResponse } from "./auth";
+import { TPost } from "./post";
 
 const baseUrl = "/user";
 
@@ -25,4 +26,34 @@ export const updateProfile = (payload: TUpdatePayload) => {
 
 export const getAllUsers = () => {
   return getMethod<TApiResponse<TResponseUser[]>>(baseUrl);
+};
+
+export type TFollowingAction = "follow" | "unfollow";
+export const toggleFollowUser = async (
+  userId: number,
+  actionType: TFollowingAction
+) => {
+  return postMethod<undefined, TApiResponse<TLoginResponse>>(
+    `${baseUrl}/${actionType}/${userId}`
+  );
+};
+
+export const getFollowing = async (userId: number) => {
+  return getMethod<TApiResponse<TLoginResponse[]>>(
+    `${baseUrl}/following/${userId}`
+  );
+};
+
+export const getFollowers = async (userId: number) => {
+  return getMethod<TApiResponse<TLoginResponse[]>>(
+    `${baseUrl}/followers/${userId}`
+  );
+};
+
+export const getLikes = async (userId: number) => {
+  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/likes/${userId}`);
+};
+
+export const getBookmarks = async (userId: number) => {
+  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/bookmarks/${userId}`);
 };
