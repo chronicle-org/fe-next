@@ -9,6 +9,7 @@ import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
+import { Bookmark, Heart, Share2 } from "lucide-react";
 
 const PostCard = ({
   data,
@@ -143,9 +144,19 @@ const PostCard = ({
             </div>
           </div>
 
-          <div className="flex gap-1 items-center">
-            <CommentIcon color="#737373" />
-            <div>{data.comment_count}</div>
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              <Heart color="#737373" />
+              <div>{data.likes_count}</div>
+            </div>
+            <div className="flex gap-1 items-center">
+              <Bookmark color="#737373" />
+              <div>{data.bookmarks_count}</div>
+            </div>
+            <div className="flex gap-1 items-center">
+              <CommentIcon color="#737373" />
+              <div>{data.comment_count}</div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,76 +1,46 @@
 "use client";
 
-import {
-  ChevronIcon,
-  CommentIcon,
-  EditIcon,
-  PasswordHideIcon,
-  PasswordShowIcon,
-} from "@/components/Icons";
-import { Button } from "@/components/ui/Button";
+import { BookIcon, Bookmark, ImageIcon, UserPlus, Users } from "lucide-react";
 import { TLoginResponse } from "@/lib/api/auth";
-import { cn, convertDateTime, getCookie, setCookie } from "@/lib/utils";
+import { getCookie, setCookie } from "@/lib/utils";
 import { useUpdateParam } from "@/lib/utils-client";
 import Image from "next/image";
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
 import "react-quill-new/dist/quill.bubble.css";
-import {
-  toolbarContentOptions,
-  toolbarBaseOptions,
-  fileUploadKey,
-} from "@/lib/constants";
-import dynamic from "next/dynamic";
-import {
-  addPost,
-  deletePost,
-  editPost,
-  findOne,
-  getAllPostsByUser,
-  TAddPostPayload,
-  TPost,
-} from "@/lib/api/post";
+import { fileUploadKey } from "@/lib/constants";
+import { findOne, TPost } from "@/lib/api/post";
 import ImageUploader from "@/components/ui/UploadImage";
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { uploadFile } from "@/lib/api/file";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
-import PostCard from "@/components/ui/PostCard";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  BookIcon,
-  Calendar1Icon,
-  GalleryThumbnailsIcon,
-  ImageIcon,
-  PlusSquareIcon,
-  SaveIcon,
-  UndoIcon,
-  UserIcon,
-} from "lucide-react";
-import Link from "next/link";
-import { FancyInput } from "@/components/ui/InputFancy";
-import { CommentSection } from "@/components/ui/CommentSection";
-import { TUpdatePayload, updateProfile } from "@/lib/api/user";
-import HTMLReactParser from "html-react-parser/lib/index";
+  getBookmarks,
+  getFollowers,
+  getFollowing,
+  TUpdatePayload,
+  updateProfile,
+} from "@/lib/api/user";
 import "quill/dist/quill.bubble.css";
-import { Textarea } from "@/components/ui/textarea";
-import { deleteComment, getAllByPostId, postComment } from "@/lib/api/comment";
-import { Spinner } from "@/components/ui/spinner";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
-import { useRouter } from "next/navigation";
 import { PostSkeleton } from "../post/[id]/PostLayout";
-import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
-import { Modal } from "@/components/ui/Modal";
+import { SideProfile } from "./SideProfile";
+import { BlogEditor } from "./BlogEditor";
+import { PostContainer } from "./PostContainer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import UserCard from "@/components/ui/UserCard";
+import PostCard from "@/components/ui/PostCard";
+import { useRouter } from "next/navigation";
 
 const ProfileLayout = ({
   data,
-  // postId,
   isVisit = false,
   onRefetchUser,
 }: {
   data: TLoginResponse;
-  // postId?: number
   isVisit?: boolean;
   onRefetchUser: () => void;
 }) => {
@@ -78,6 +48,9 @@ const ProfileLayout = ({
     status?: boolean;
     data?: Partial<TPost>;
   }>();
+  const [tab, setTab] = useState("posts");
+
+  const { push } = useRouter();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
 
@@ -86,11 +59,10 @@ const ProfileLayout = ({
   const postId = getParam().get("post_id") || "";
 
   const { isFetching: isFetchingParamPostId } = useQuery({
-    enabled: !!postId && !edit,
+    enabled: !!postId && !edit && tab === "posts",
     queryKey: [`post-data-${+postId}`],
     queryFn: async () => {
       try {
-        // console.log("masuk")
         if (!postId.length) throw new Error();
         const res = await findOne(+postId);
         setEdit({ status: true, data: res.data.content as TPost });
@@ -126,6 +98,48 @@ const ProfileLayout = ({
         toast.error(err.response?.data.error);
       },
     });
+
+  const { data: followers, isFetching: isFetchingFollowers } = useQuery({
+    enabled: tab === "followers",
+    queryKey: ["followers", data.id],
+    queryFn: async () => {
+      try {
+        const res = await getFollowers(data.id);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
+  const { data: following, isFetching: isFetchingFollowing } = useQuery({
+    enabled: tab === "following",
+    queryKey: ["following", data.id],
+    queryFn: async () => {
+      try {
+        const res = await getFollowing(data.id);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
+  const { data: bookmarks, isFetching: isFetchingBookmarks } = useQuery({
+    enabled: tab === "bookmarks",
+    queryKey: ["bookmarks", data.id],
+    queryFn: async () => {
+      try {
+        const res = await getBookmarks(data.id);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
 
   return (
     <div className="sm:my-10 sm:mx-auto flex flex-col gap-10 w-full sm:max-w-[80vw]">
@@ -195,31 +209,153 @@ const ProfileLayout = ({
             }}
             onUpdateProfile={updateProfileData}
           />
-          {isFetchingParamPostId ? (
-            <PostSkeleton />
+          {edit?.status ? (
+            <BlogEditor
+              data={edit.data}
+              onBack={() => {
+                removeParam("post_id");
+                setEdit({ status: false });
+              }}
+              isVisit={isVisit}
+              onUpdatePostCounter={(post) =>
+                setEdit((prev) => ({ ...prev, data: post }))
+              }
+            />
           ) : (
-            <>
-              {edit?.status ? (
-                <BlogEditor
-                  data={edit.data}
-                  onBack={() => {
-                    removeParam("post_id");
-                    setEdit({ status: false });
-                  }}
-                  isVisit={isVisit}
-                />
-              ) : (
-                <PostContainer
-                  userData={data}
-                  onEdit={(post) => {
-                    setEdit({ status: true, data: post });
-                    if (post.id)
-                      setParam("post_id", (post.id as number).toString());
-                  }}
-                  isVisit={isVisit}
-                />
-              )}
-            </>
+            <Tabs
+              defaultValue="posts"
+              value={tab}
+              className="w-fit lg:w-[800px] mx-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="posts" onClick={() => setTab("posts")}>
+                  <BookIcon className="w-5 h-5" />
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger
+                  value="followers"
+                  onClick={() => setTab("followers")}
+                >
+                  <Users className="w-5 h-5" />
+                  Followers
+                </TabsTrigger>
+                <TabsTrigger
+                  value="following"
+                  onClick={() => setTab("following")}
+                >
+                  <UserPlus className="w-5 h-5" />
+                  Following
+                </TabsTrigger>
+                <TabsTrigger
+                  value="bookmarks"
+                  onClick={() => setTab("bookmarks")}
+                >
+                  <Bookmark className="w-5 h-5" />
+                  Bookmarks
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="posts">
+                {isFetchingParamPostId ? (
+                  <PostSkeleton />
+                ) : (
+                  <PostContainer
+                    userData={data}
+                    onEdit={(post) => {
+                      setEdit({ status: true, data: post });
+                      if (post.id)
+                        setParam("post_id", (post.id as number).toString());
+                    }}
+                    isVisit={isVisit}
+                  />
+                )}
+              </TabsContent>
+              <TabsContent value="followers">
+                <div className="flex flex-wrap gap-2.5">
+                  {isFetchingFollowers ? (
+                    Array(5)
+                      .fill("")
+                      .map((_, index) => {
+                        return (
+                          <Skeleton
+                            className="h-[125px] aspect-square rounded-xl"
+                            key={index}
+                          />
+                        );
+                      })
+                  ) : (
+                    <>
+                      {!followers?.length ? (
+                        <div>No followers</div>
+                      ) : (
+                        followers?.map((follower) => {
+                          return <UserCard user={follower} key={follower.id} />;
+                        })
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="following">
+                <div className="flex flex-wrap gap-2.5">
+                  {isFetchingFollowing ? (
+                    Array(5)
+                      .fill("")
+                      .map((_, index) => {
+                        return (
+                          <Skeleton
+                            className="h-[125px] aspect-square rounded-xl"
+                            key={index}
+                          />
+                        );
+                      })
+                  ) : (
+                    <>
+                      {!following?.length ? (
+                        <div>No following</div>
+                      ) : (
+                        following?.map((following) => {
+                          return (
+                            <UserCard user={following} key={following.id} />
+                          );
+                        })
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="bookmarks">
+                <div className="flex flex-col gap-2.5">
+                  {isFetchingBookmarks ? (
+                    Array(5)
+                      .fill("")
+                      .map((_, index) => {
+                        return (
+                          <Skeleton
+                            className="h-[125px] rounded-xl w-full"
+                            key={index}
+                          />
+                        );
+                      })
+                  ) : (
+                    <>
+                      {!bookmarks?.length ? (
+                        <div>No bookmarks</div>
+                      ) : (
+                        bookmarks?.map((bookmark) => {
+                          return (
+                            <PostCard
+                              data={bookmark}
+                              key={bookmark.id}
+                              onClick={() => push(`/post/${bookmark.id}`)}
+                            />
+                          );
+                        })
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </div>
@@ -228,544 +364,3 @@ const ProfileLayout = ({
 };
 
 export default ProfileLayout;
-
-const SideProfile = ({
-  data,
-  isVisit,
-  isPending,
-  onUpload,
-  onUpdateProfile,
-}: {
-  data: TLoginResponse;
-  isVisit?: boolean;
-  onUpload: (file: File, type: keyof typeof fileUploadKey) => void;
-  onUpdateProfile: (data: TUpdatePayload) => void;
-  isPending: boolean;
-}) => {
-  const [isEdit, setIsEdit] = useState(false);
-  const [formData, setFormData] = useState<TUpdatePayload>(data);
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onUpdateProfile(formData);
-  };
-  return (
-    <div
-      className={cn(
-        "flex min-[881px]:flex-col gap-5 min-[881px]:border-r",
-        "max-[880px]:border-b border-muted p-10 max-lg:p-5"
-      )}
-    >
-      {/* PROFILE PICTURE */}
-      {!isVisit ? (
-        <div className="w-[200px] h-[200px]">
-          <ImageUploader
-            value={data.picture_url}
-            onChange={(_, file) => {
-              if (file) onUpload(file, 3);
-            }}
-            mode="overlay"
-            layout="fill"
-            disabled={isPending}
-            imageClassName="rounded-full"
-          />
-        </div>
-      ) : data.picture_url ? (
-        <div
-          className={cn(
-            "relative rounded-full aspect-square",
-            "max-w-[200px] w-full shrink lg:min-w-[200px] min-w-[100px]",
-            "border border-foreground bg-accent-foreground",
-            "overflow-hidden h-fit"
-          )}
-        >
-          <Image
-            src={data.picture_url}
-            alt={data.picture_url}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <UserIcon
-          width={200}
-          height={200}
-          className="rounded-full border border-muted"
-        />
-      )}
-
-      <div className="flex flex-col gap-5 max-w-full w-full sm:min-w-0">
-        {isEdit ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <FancyInput
-              label="Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-            />
-            <FancyInput
-              label="Bio"
-              value={formData.profile_description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  profile_description: e.target.value,
-                }))
-              }
-            />
-          </form>
-        ) : (
-          <>
-            <div className="items-center shrink">
-              <div className="wrap-anywhere break-all line-clamp-1">
-                {data.name}
-              </div>
-              <div className="text-sm text-muted-foreground wrap-anywhere break-all line-clamp-1">
-                @{data.handle}
-              </div>
-              <div className="flex items-center gap-1">
-                <Link
-                  href={`mailto:${data.email}`}
-                  className="text-sm text-blue-500 wrap-anywhere break-all line-clamp-1"
-                >
-                  {data.email}
-                </Link>
-              </div>
-            </div>
-            <div className="wrap-anywhere break-all line-clamp-1">
-              {data.profile_description}
-            </div>
-            <div className="flex items-center text-muted-foreground text-sm gap-1">
-              <Calendar1Icon height={16} width={16} />
-              {convertDateTime({
-                date: data.created_at,
-                format: "D MMMM YYYY",
-              })}
-            </div>
-          </>
-        )}
-        {isEdit ? (
-          <div className="flex gap-2">
-            <Button
-              variant={"secondary"}
-              className="w-fit"
-              onClick={() => {
-                setIsEdit(false);
-                onUpdateProfile(formData);
-              }}
-              disabled={isPending}
-            >
-              <SaveIcon />
-            </Button>
-            <Button
-              variant={"destructive"}
-              className="w-fit"
-              onClick={() => setIsEdit(false)}
-              disabled={isPending}
-            >
-              <UndoIcon />
-            </Button>
-          </div>
-        ) : (
-          !isVisit && (
-            <Button
-              variant={"secondary"}
-              className="w-fit"
-              onClick={() => setIsEdit(true)}
-              disabled={isPending}
-            >
-              <EditIcon color="var(--foreground)" />
-            </Button>
-          )
-        )}
-      </div>
-    </div>
-  );
-};
-
-type TEditorTheme = "snow" | "bubble";
-
-const initPayloadData: TAddPostPayload & { thumbnail_file?: File } = {
-  title: "",
-  sub_title: "",
-  thumbnail_url: "",
-  content: "",
-};
-
-export const BlogEditor = ({
-  data,
-  isVisit,
-  isPostView,
-  onBack,
-}: {
-  data?: Partial<TPost>;
-  isVisit?: boolean;
-  isPostView?: boolean;
-  onBack?: () => void;
-}) => {
-  const { push } = useRouter();
-  const user = useUserStore((state) => state.user);
-  const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
-    data || initPayloadData
-  );
-  const [theme, setTheme] = useState<TEditorTheme>("snow");
-  const formRef = useRef<HTMLFormElement>(null);
-  const ReactQuill = useMemo(
-    () => dynamic(() => import("react-quill-new"), { ssr: false }),
-    []
-  );
-
-  const { mutate: upload, isPending: isUploadingFile } = useMutation({
-    mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
-      uploadFile(data.file, data.type),
-    // onSuccess: (res) => {
-    //   setFormData((prev) => ({
-    //     ...prev,
-    //     thumbnail_url: res.data.content?.url,
-    //   }));
-    // },
-    // onError: (err: TApiErrorResponse) => {
-    //   toast.error(err.response?.data.error);
-    // },
-  });
-
-  const { mutate: submitPost, isPending: isSubmittingPost } = useMutation({
-    mutationFn: (data: TAddPostPayload) => addPost(data),
-    onSuccess: () => onBack?.(),
-    onError: (err: TApiErrorResponse) => {
-      toast.error(err.response?.data.error);
-    },
-  });
-
-  const { mutate: updatePost, isPending: isUpdatingPost } = useMutation({
-    mutationFn: (payload: { id: number; data: Partial<TAddPostPayload> }) =>
-      editPost(payload.id, payload.data),
-    onSuccess: () => onBack?.(),
-    onError: (err: TApiErrorResponse) => {
-      toast.error(err.response?.data.error);
-    },
-  });
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const { thumbnail_file, ...rest } = formData;
-    if (!!thumbnail_file)
-      await upload(
-        { file: thumbnail_file, type: 1 },
-        {
-          onSuccess: async (res) => {
-            const newData = {
-              title: formData.title,
-              sub_title: formData.sub_title,
-              thumbnail_url: res.data.content?.url,
-              content: formData.content,
-            };
-            if (data?.id) await updatePost({ id: data.id, data: newData });
-            else await submitPost(newData as TAddPostPayload);
-          },
-          onError: (error) => {
-            const err = error as TApiErrorResponse;
-            toast.error(err.response?.data.error);
-          },
-        }
-      );
-    else {
-      if (data?.id) await updatePost({ id: data.id, data: rest });
-      else await submitPost(rest as TAddPostPayload);
-    }
-  };
-
-  const handleChange = (key: keyof typeof formData, value?: string | File) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
-  return (
-    <div className="flex flex-col gap-10 w-full">
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        className="w-full flex-1 flex flex-col gap-10"
-      >
-        <div className="flex justify-between items-center">
-          {onBack && (
-            <div className="cursor-pointer" onClick={onBack}>
-              <ChevronIcon color="var(--foreground)" /> Back
-            </div>
-          )}
-
-          {!isVisit && (
-            <div className="flex gap-5 self-end items-center">
-              <div
-                className="w-fit h-fit cursor-pointer p-2"
-                onClick={() => setTheme(theme === "snow" ? "bubble" : "snow")}
-              >
-                {theme === "snow" ? (
-                  <PasswordShowIcon
-                    width={20}
-                    height={20}
-                    color="var(--foreground)"
-                  />
-                ) : (
-                  <PasswordHideIcon
-                    width={20}
-                    height={20}
-                    color="var(--foreground)"
-                  />
-                )}
-              </div>
-
-              <Button
-                variant={"secondary"}
-                type="submit"
-                disabled={isUploadingFile || isSubmittingPost || isUpdatingPost}
-              >
-                Submit
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="w-full flex flex-col gap-10 max-w-[800px] mx-auto">
-          <div className="flex gap-10 items-center max-md:flex-wrap-reverse">
-            <div className="flex flex-col gap-5 w-full">
-              <div>
-                {isVisit ? (
-                  <div className="w-full ql-bubble">
-                    <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
-                      {HTMLReactParser(data?.title || "")}
-                    </div>
-                  </div>
-                ) : (
-                  <ReactQuill
-                    theme={theme}
-                    value={formData.title}
-                    placeholder="Title"
-                    modules={{ toolbar: toolbarBaseOptions }}
-                    onChange={(value) => handleChange("title", value)}
-                  />
-                )}
-              </div>
-              <div>
-                {isVisit ? (
-                  <div className="w-full ql-bubble">
-                    <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
-                      {HTMLReactParser(data?.sub_title || "")}
-                    </div>
-                  </div>
-                ) : (
-                  <ReactQuill
-                    theme={theme}
-                    value={formData.sub_title}
-                    placeholder="Subtitle"
-                    modules={{ toolbar: toolbarBaseOptions }}
-                    onChange={(value) => handleChange("sub_title", value)}
-                  />
-                )}
-              </div>
-            </div>
-            {isVisit ? (
-              <>
-                {data?.thumbnail_url ? (
-                  <div className="relative w-full max-w-[50vw] mx-auto aspect-square">
-                    <Image
-                      src={data?.thumbnail_url}
-                      alt={"thumbnail"}
-                      fill
-                      className="rounded-2xl object-cover"
-                    />
-                  </div>
-                ) : (
-                  <GalleryThumbnailsIcon className="w-full aspect-square" />
-                )}
-              </>
-            ) : (
-              <ImageUploader
-                label="Thumbnail"
-                value={formData.thumbnail_url}
-                onChange={(_, file) => handleChange("thumbnail_file", file)}
-              />
-            )}
-          </div>
-          <div>
-            {isVisit ? (
-              <div className="w-full ql-bubble">
-                <div className="ql-editor p-0!">
-                  {HTMLReactParser(data?.content || "")}
-                </div>
-              </div>
-            ) : (
-              <ReactQuill
-                theme={theme}
-                value={formData.content}
-                modules={{ toolbar: toolbarContentOptions }}
-                placeholder="Tell your story..."
-                onChange={(value) => handleChange("content", value)}
-              />
-            )}
-          </div>
-          {isPostView && (
-            <div
-              className="w-fit max-w-[200px] flex gap-2 items-center cursor-pointer"
-              onClick={() => push(`/profile/${data?.user_id}`)}
-            >
-              <div className="relative w-[30px] h-[30px]">
-                <Image
-                  src={data?.user?.picture_url || ""}
-                  alt={data?.user?.name || ""}
-                  fill
-                  className="rounded-full"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <div className="font-semibold">{data?.user?.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  @{data?.user?.handle}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </form>
-      {user && (
-        <CommentSection
-          postId={data?.id}
-          postOwnerId={data?.user_id}
-          userId={user?.id}
-          onDelete={(id, cbRefresh) => {
-            toast.promise(deleteComment(id), {
-              loading: "Deleting comment...",
-              success: () => {
-                cbRefresh();
-                return "Comment deleted successfully";
-              },
-              error: "Failed to delete comment",
-            });
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-export const PostContainer = ({
-  userData,
-  isVisit,
-  onEdit,
-}: {
-  userData: TLoginResponse;
-  isVisit?: boolean;
-  onEdit: (data: Partial<TPost>) => void;
-}) => {
-  const [modal, setModal] = useState<{ show: boolean; data?: TPost }>({
-    show: false,
-  });
-  // const {
-  //   data,
-  //   fetchNextPage,
-  //   hasNextPage,
-  //   isFetchingNextPage,
-  // } = useInfiniteQuery({
-  //   queryKey: ["posts"],
-  //   queryFn: ({ pageParam = 1 }) => getAllPostsByUser(),
-  //   getNextPageParam: (lastPage) => lastPage.nextPage ?? false,
-  // });
-
-  const {
-    data: postsData,
-    isLoading: isLoadingPostsData,
-    refetch,
-  } = usePaginationQuery({
-    queryKey: (state) => ["posts", state],
-    fetchFunction: async (params) => {
-      const { filters, ...rest } = params;
-      return getAllPostsByUser(userData.id, {
-        ...rest,
-        search: filters.search,
-      });
-    },
-    fetchOnce: true,
-    initPage: 1,
-    initFilters: {
-      search: "",
-    },
-    onError: (error) => {
-      toast.error(error.response?.data.error);
-    },
-  });
-
-  const { mutate: onDelete, isPending: isPendingDelete } = useMutation({
-    mutationFn: (id: number) => deletePost(id),
-    onSuccess: () => {
-      toast.success("Post deleted successfully");
-      setModal({ show: false });
-      refetch();
-    },
-    onError: (error: TApiErrorResponse) => {
-      toast.error(error.response?.data.error);
-    },
-  });
-
-  return (
-    <>
-      <Modal
-        isOpen={modal.show}
-        onClose={() => setModal({ show: false })}
-        title="Delete Post"
-        showCloseIcon
-        onConfirm={() => onDelete(modal.data?.id as number)}
-        isLoading={isPendingDelete}
-      >
-        <p>Are you sure you want to delete this post?</p>
-      </Modal>
-      <div className="flex flex-col gap-5 w-full max-w-[800px] mx-auto max-sm:px-5">
-        {!isVisit && (
-          <Button
-            variant={"secondary"}
-            className="w-fit self-end"
-            onClick={() => onEdit(initPayloadData)}
-          >
-            <PlusSquareIcon />
-            New
-          </Button>
-        )}
-        {isLoadingPostsData ? (
-          <div className="flex flex-wrap w-full gap-2.5">
-            {Array(3)
-              .fill("")
-              .map((_, index) => {
-                return (
-                  <Skeleton
-                    className="h-[125px] w-full rounded-xl"
-                    key={index}
-                  />
-                );
-              })}
-          </div>
-        ) : !postsData?.length ? (
-          <div className="flex flex-col gap-5 mx-auto items-center text-muted-foreground flex-1 justify-center">
-            <BookIcon width={50} height={50} />
-            <p>{isVisit ? "No post found" : "Start creating your story"}</p>
-          </div>
-        ) : (
-          postsData.map((post) => {
-            return (
-              <PostCard
-                data={post}
-                key={post.id}
-                onClick={() => onEdit(post)}
-                onDelete={() => setModal({ show: true, data: post })}
-              />
-            );
-          })
-        )}
-      </div>
-    </>
-  );
-};
-
-// const CommentCard = ({ data }: { data: TComment }) => {
-//   return (
-//     <div ></div>
-//   )
-// }

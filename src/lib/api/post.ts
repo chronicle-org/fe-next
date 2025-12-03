@@ -7,6 +7,7 @@ import {
   TApiResponsePagination,
   TPaginationParam,
 } from ".";
+import { InteractionType } from "../types";
 import { TLoginResponse } from "./auth";
 
 const baseUrl = "/post";
@@ -22,6 +23,13 @@ export type TPost = {
   created_at: string;
   updated_at: string;
   visibility: boolean;
+  tags: string;
+  bookmarks_count: number;
+  bookmarks: number[];
+  share_count: number;
+  view_count: number;
+  likes_count: number;
+  likes: number[];
   user: Partial<TLoginResponse>;
 };
 
@@ -68,4 +76,14 @@ export const editPost = async (
 
 export const deletePost = async (id: number) => {
   return deleteMethod<TApiResponse<TPost>>(`${baseUrl}/${id}`);
+};
+
+export const updateInteraction = (
+  actionType: InteractionType,
+  postId: number
+) => {
+  return putMethod<
+    undefined,
+    TApiResponse<{ post: TPost; user: TLoginResponse }>
+  >(`${baseUrl}/interaction/${actionType}/${postId}`);
 };

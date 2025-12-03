@@ -20,6 +20,10 @@ export function setCookie(value: string, days = 1): void {
   )};expires=${expires.toUTCString()};path=/`;
 }
 
+export function updateCookie(value: string): void {
+  document.cookie = `${localCookieName}=${encodeURIComponent(value)};path=/`;
+}
+
 export function getCookie(serverRequest?: NextRequest): string | null {
   if (serverRequest && typeof window === "undefined")
     return serverRequest.cookies.get(localCookieName)?.value || "";

@@ -1,17 +1,18 @@
 "use client";
 
-import { BlogEditor } from "@/app/profile/ProfileLayout";
+import { BlogEditor } from "@/app/profile/BlogEditor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TApiErrorResponse } from "@/lib/api";
 import { findOne } from "@/lib/api/post";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export const PostLayout = ({ id }: { id?: number }) => {
   const { push, back } = useRouter();
+  const queryClient = useQueryClient();
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     enabled: id !== undefined,
     queryKey: [`post-data-${id}`],
     queryFn: async () => {
@@ -31,7 +32,15 @@ export const PostLayout = ({ id }: { id?: number }) => {
 
   return (
     <div className="py-10 max-w-[90vw] mx-auto w-full">
-      <BlogEditor data={data} isVisit onBack={() => back()} isPostView />
+      <BlogEditor
+        data={data}
+        isVisit
+        onBack={() => back()}
+        isPostView
+        onUpdatePostCounter={(post) =>
+          queryClient.setQueryData(["post-data-${id}"], post)
+        }
+      />
     </div>
   );
 };
