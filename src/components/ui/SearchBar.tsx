@@ -85,7 +85,7 @@ export const SearchBar = ({
           else if (inputRef.current?.value)
             closeRef.current?.classList.toggle("hidden", false);
         }}
-        className="pl-9"
+        className="pl-9 truncate"
         placeholder={placeholder}
         ref={inputRef}
         onFocus={() => {
