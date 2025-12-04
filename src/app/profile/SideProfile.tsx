@@ -59,7 +59,7 @@ export const SideProfile = ({
     <div
       className={cn(
         "flex min-[881px]:flex-col gap-5 min-[881px]:border-r",
-        "max-[880px]:border-b border-muted p-10 max-lg:p-5"
+        "max-[880px]:border-b border-muted p-2.5 md:p-10 relative"
       )}
     >
       {/* PROFILE PICTURE */}
@@ -77,20 +77,22 @@ export const SideProfile = ({
           />
         </div>
       ) : data.picture_url ? (
-        <div
-          className={cn(
-            "relative rounded-full aspect-square",
-            "max-w-[200px] w-full shrink lg:min-w-[200px] min-w-[100px]",
-            "border border-foreground bg-accent-foreground",
-            "overflow-hidden h-fit"
-          )}
-        >
-          <Image
-            src={data.picture_url}
-            alt={data.picture_url}
-            fill
-            className="object-cover"
-          />
+        <div className="max-[400px]:absolute -top-1/3">
+          <div
+            className={cn(
+              "relative rounded-full aspect-square",
+              "max-w-[200px] w-full shrink lg:min-w-[200px] min-w-[100px]",
+              "border border-foreground bg-accent-foreground",
+              "overflow-hidden h-fit"
+            )}
+          >
+            <Image
+              src={data.picture_url}
+              alt={data.picture_url}
+              fill
+              className="object-cover"
+            />
+          </div>
         </div>
       ) : (
         <UserIcon
@@ -122,7 +124,7 @@ export const SideProfile = ({
           </form>
         ) : (
           <>
-            <div className="items-center shrink">
+            <div className="items-center shrink max-[400px]:mt-10">
               <div className="wrap-anywhere break-all line-clamp-1">
                 {data.name}
               </div>
@@ -188,6 +190,7 @@ export const SideProfile = ({
       {isVisit && (
         <Button
           variant={"secondary"}
+          className="max-[400px]:absolute right-2"
           disabled={isPendingFollow}
           onClick={() =>
             toggleFollow(

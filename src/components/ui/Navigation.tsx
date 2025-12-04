@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { Button } from "./Button";
-import { DarkModeIcon, LightModeIcon } from "../Icons";
+import { DarkModeIcon, LightModeIcon, SystemModeIcon } from "../Icons";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import { deleteCookie } from "@/lib/utils";
 import { logUserOut, TLoginResponse } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
-import { UserIcon } from "lucide-react";
+import { Pencil, UserIcon } from "lucide-react";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
 import { SearchBar } from "./SearchBar";
@@ -83,7 +83,10 @@ const Navigation = () => {
               <></>
             ) : (
               <Button variant={"secondary"} onClick={() => push("/auth")}>
-                Start Writing!
+                <span className="max-sm:hidden">Start Writing!</span>
+                <span className="sm:hidden">
+                  <Pencil className="w-4 h-4" />
+                </span>
               </Button>
             )}
             <Button
@@ -91,8 +94,12 @@ const Navigation = () => {
               onClick={onToggleTheme}
               className="flex gap-2 p-0! h-fit hover:bg-transparent focus:ring-0! hover:text-white"
             >
-              {theme === "light" ? <LightModeIcon /> : <DarkModeIcon />}
-              <span className="capitalize min-w-11 text-start">{theme}</span>
+              {theme === "light" && <LightModeIcon />}
+              {theme === "dark" && <DarkModeIcon />}
+              {theme === "system" && <SystemModeIcon />}
+              <span className="capitalize min-w-11 text-start max-[400px]:hidden">
+                {theme}
+              </span>
             </Button>
             {pathname !== "/" && !pathname.includes("auth") && (
               <DropdownNavMenu user={user} />

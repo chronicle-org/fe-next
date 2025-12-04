@@ -2,7 +2,7 @@
 
 import { BookIcon, Bookmark, ImageIcon, UserPlus, Users } from "lucide-react";
 import { TLoginResponse } from "@/lib/api/auth";
-import { getCookie, setCookie } from "@/lib/utils";
+import { cn, getCookie, setCookie } from "@/lib/utils";
 import { useUpdateParam } from "@/lib/utils-client";
 import Image from "next/image";
 import { useState } from "react";
@@ -143,9 +143,9 @@ const ProfileLayout = ({
 
   return (
     <div className="sm:my-10 sm:mx-auto flex flex-col gap-10 w-full sm:max-w-[80vw]">
-      <div className="flex flex-col gap-10 relative w-full">
+      <div className="flex flex-col gap-2.5 lg:gap-10 relative w-full">
         {/* BANNER */}
-        <div className="relative w-full h-[200px]">
+        <div className="relative w-full h-[100px] md:h-[200px]">
           {!isVisit ? (
             <ImageUploader
               value={data.banner_url}
@@ -186,7 +186,7 @@ const ProfileLayout = ({
           )}
         </div>
 
-        <div className="flex max-[880px]:flex-col gap-10">
+        <div className="flex max-[880px]:flex-col gap-2.5 md:gap-10">
           <SideProfile
             data={data}
             isPending={isUploadingFile || isUpdatingProfile}
@@ -225,9 +225,14 @@ const ProfileLayout = ({
             <Tabs
               defaultValue="posts"
               value={tab}
-              className="w-fit lg:w-[800px] mx-auto"
+              className="max-lg:w-full lg:w-[800px] mx-auto"
             >
-              <TabsList>
+              <TabsList
+                className={cn(
+                  "max-sm:self-center max-w-full overflow-auto justify-start",
+                  "max-[400px]:rounded-none"
+                )}
+              >
                 <TabsTrigger value="posts" onClick={() => setTab("posts")}>
                   <BookIcon className="w-5 h-5" />
                   Posts
@@ -270,7 +275,7 @@ const ProfileLayout = ({
                 )}
               </TabsContent>
               <TabsContent value="followers">
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-2.5 mx-2.5">
                   {isFetchingFollowers ? (
                     Array(5)
                       .fill("")
@@ -296,7 +301,7 @@ const ProfileLayout = ({
                 </div>
               </TabsContent>
               <TabsContent value="following">
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-2.5 mx-2.5">
                   {isFetchingFollowing ? (
                     Array(5)
                       .fill("")
@@ -324,7 +329,7 @@ const ProfileLayout = ({
                 </div>
               </TabsContent>
               <TabsContent value="bookmarks">
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5 mx-2.5">
                   {isFetchingBookmarks ? (
                     Array(5)
                       .fill("")
