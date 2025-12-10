@@ -68,8 +68,10 @@ export const SearchBar = ({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit?.(inputRef.current?.value || "");
-    inputRef.current?.blur();
+    if (inputRef.current?.value) {
+      onSubmit?.(inputRef.current?.value || "");
+      inputRef.current?.blur();
+    }
   };
 
   return (
