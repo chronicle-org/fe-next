@@ -73,7 +73,10 @@ const Navigation = () => {
             defaultValue={
               pathname.includes("search") ? searchParams.get("q") || "" : ""
             }
-            onSubmit={(value) => push(`/search?q=${value}`)}
+            onSubmit={(value) => {
+              if (!value.trim()) return;
+              push(`/search?q=${encodeURIComponent(value.trim())}`);
+            }}
             shortcut={"/"}
           />
         </li>

@@ -11,7 +11,7 @@ const limit = 10;
 
 const Search = () => {
   const searchParams = useSearchParams();
-  const query = searchParams.get("q");
+  const query = decodeURIComponent(searchParams.get("q") || "");
   const { push } = useRouter();
 
   if (!query) push("/");
