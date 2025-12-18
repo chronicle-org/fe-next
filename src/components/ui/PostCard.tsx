@@ -9,7 +9,7 @@ import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
-import { Bookmark, Heart, Share2 } from "lucide-react";
+import { Bookmark, Heart } from "lucide-react";
 
 const PostCard = ({
   data,
