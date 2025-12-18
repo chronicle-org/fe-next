@@ -59,9 +59,12 @@ export function convertDateTime({
   return dayjsDate.format(format);
 }
 
-export const debounce = (func: Function, delay: number) => {
+export const debounce = <Args extends unknown[], Return>(
+  func: (...args: Args) => Return,
+  delay: number
+): ((...args: Args) => void) => {
   let timer: NodeJS.Timeout;
-  return function (this: any, ...args: any) {
+  return function (this: unknown, ...args: Args) {
     clearTimeout(timer);
     timer = setTimeout(() => func.apply(this, args), delay);
   };

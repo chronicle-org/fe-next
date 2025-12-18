@@ -18,14 +18,14 @@ import { TApiErrorResponse, TApiResponsePagination } from "../api";
 //   status: number;
 // }
 
-type PaginationState<TFilters extends Record<string, any>> = {
+type PaginationState<TFilters extends Record<string, unknown>> = {
   currentPage: number;
   limit: number;
   lastPage: number;
   count: number;
   filters: TFilters;
 };
-type FetchFunctionParams<TFilters extends Record<string, any>> = {
+type FetchFunctionParams<TFilters extends Record<string, unknown>> = {
   page: number;
   limit: number;
   filters: TFilters;
@@ -33,7 +33,7 @@ type FetchFunctionParams<TFilters extends Record<string, any>> = {
 
 type TUsePaginationQueryOptions<
   TQueryData,
-  TFilters extends Record<string, any>
+  TFilters extends Record<string, unknown>
 > = {
   limit?: number;
   fetchOnce?: boolean;
@@ -52,7 +52,7 @@ type TUsePaginationQueryOptions<
 
 export function usePaginationQuery<
   TQueryData,
-  TFilters extends Record<string, any>
+  TFilters extends Record<string, unknown>
 >({
   limit: initialLimit = 10,
   fetchOnce = false,
@@ -143,7 +143,7 @@ export function usePaginationQuery<
         limit: newLimit,
         currentPage: 1,
       }));
-      fetchOnce && setFetchTrigger(true);
+      if (fetchOnce) setFetchTrigger(true);
     },
     [fetchOnce]
   );
@@ -173,12 +173,12 @@ export function usePaginationQuery<
           count: totalCount || 0,
         }));
 
-        fetchOnce && setFetchTrigger(false);
+        if (fetchOnce) setFetchTrigger(false);
         cbSuccess?.(apiData);
 
         return apiData || [];
       } catch (error) {
-        fetchOnce && setFetchTrigger(false);
+        if (fetchOnce) setFetchTrigger(false);
         const err = error as TApiErrorResponse;
         onError?.(err);
         return [];
@@ -194,7 +194,7 @@ export function usePaginationQuery<
       limit: initialLimit,
       filters: initFilters,
     });
-    fetchOnce && setFetchTrigger(true);
+    if (fetchOnce) setFetchTrigger(true);
   }, [fetchOnce, initialLimit, initFilters]);
 
   const totalPages =
