@@ -184,7 +184,7 @@ export const BlogEditor = ({
     document.body.removeChild(textArea);
   };
 
-  const { mutate: countInteraction, isPending: isCountingInteraction } =
+  const { mutate: countInteraction } =
     useMutation({
       mutationFn: async (interaction: InteractionType) => {
         const apiCallPromise = updateInteraction(interaction, data?.id ?? 0);
@@ -218,7 +218,7 @@ export const BlogEditor = ({
       initRef.current = true;
       countInteraction("view");
     }
-  }, [isVisit, isPostView]);
+  }, [isVisit, isPostView, data?.id, countInteraction]);
 
   return (
     <>

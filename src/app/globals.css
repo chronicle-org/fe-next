@@ -144,4 +144,9 @@
   color: var(--muted-foreground) !important;
 }
 
+/* Dark theme overrides */
+.ql-snow .ql-picker-options {
+  background-color: var(--background) !important;
+}
+
 /*  */
