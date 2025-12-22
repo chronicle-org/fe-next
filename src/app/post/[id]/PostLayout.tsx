@@ -12,7 +12,7 @@ export const PostLayout = ({ id }: { id?: number }) => {
   const { push, back } = useRouter();
   const queryClient = useQueryClient();
 
-  const { data, isFetching, refetch } = useQuery({
+  const { data, isFetching } = useQuery({
     enabled: id !== undefined,
     queryKey: [`post-data-${id}`],
     queryFn: async () => {
@@ -38,7 +38,7 @@ export const PostLayout = ({ id }: { id?: number }) => {
         onBack={() => back()}
         isPostView
         onUpdatePostCounter={(post) =>
-          queryClient.setQueryData(["post-data-${id}"], post)
+          queryClient.setQueryData([`post-data-${id}`], post)
         }
       />
     </div>

@@ -87,3 +87,13 @@ export const updateInteraction = (
     TApiResponse<{ post: TPost; user: TLoginResponse }>
   >(`${baseUrl}/interaction/${actionType}/${postId}`);
 };
+
+export const updateCounter = (
+  actionType: "view" | "share",
+  postId: number
+) => {
+  return putMethod<
+    undefined,
+    TApiResponse<{ post: TPost; user: TLoginResponse }>
+  >(`${baseUrl}/counter/${actionType}/${postId}`);
+};

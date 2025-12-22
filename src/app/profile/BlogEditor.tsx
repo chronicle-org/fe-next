@@ -16,6 +16,7 @@ import {
   editPost,
   TAddPostPayload,
   TPost,
+  updateCounter,
   updateInteraction,
 } from "@/lib/api/post";
 import {
@@ -184,41 +185,46 @@ export const BlogEditor = ({
     document.body.removeChild(textArea);
   };
 
-  const { mutate: countInteraction } =
-    useMutation({
-      mutationFn: async (interaction: InteractionType) => {
-        const apiCallPromise = updateInteraction(interaction, data?.id ?? 0);
+  const { mutate: countInteraction } = useMutation({
+    mutationFn: async (interaction: InteractionType) => {
+      const apiCallPromise = updateInteraction(interaction, data?.id ?? 0);
 
-        if (interaction === "view" || interaction === "share")
-          return apiCallPromise;
-        else {
-          toast.promise(apiCallPromise, {
-            loading: "Processing...",
-            success: () => {
-              const text =
-                interaction.charAt(0).toUpperCase() + interaction.slice(1);
-              return `${text}${text[text.length - 1] === "e" ? "d" : "ed"}`;
-            },
-            error: (err) => err.response?.data.message,
-          });
-          return apiCallPromise;
-        }
-      },
-      onSuccess: (res, interaction) => {
-        if (interaction === "view" || interaction === "share") return;
-        updateUserStore(res.data.content?.user as TLoginResponse);
-        updateCookie(JSON.stringify(res.data.content?.user));
-        onUpdatePostCounter?.(res.data.content?.post as TPost);
-      },
-    });
+      if (interaction === "view" || interaction === "share")
+        return apiCallPromise;
+      else {
+        toast.promise(apiCallPromise, {
+          loading: "Processing...",
+          success: () => {
+            const text =
+              interaction.charAt(0).toUpperCase() + interaction.slice(1);
+            return `${text}${text[text.length - 1] === "e" ? "d" : "ed"}`;
+          },
+          error: (err) => err.response?.data.message,
+        });
+        return apiCallPromise;
+      }
+    },
+    onSuccess: (res, interaction) => {
+      if (interaction === "view" || interaction === "share") return;
+      updateUserStore(res.data.content?.user as TLoginResponse);
+      updateCookie(JSON.stringify(res.data.content?.user));
+      onUpdatePostCounter?.(res.data.content?.post as TPost);
+    },
+  });
+
+  const { mutate: addCounter } = useMutation({
+    mutationFn: async (actionType: "view" | "share") => {
+      return updateCounter(actionType, data?.id ?? 0);
+    },
+  });
 
   useEffect(() => {
     if (!data?.id || initRef.current) return;
     if (isVisit || isPostView) {
       initRef.current = true;
-      countInteraction("view");
+      addCounter("view");
     }
-  }, [isVisit, isPostView, data?.id, countInteraction]);
+  }, [isVisit, isPostView, data?.id, addCounter]);
 
   return (
     <>
@@ -268,6 +274,7 @@ export const BlogEditor = ({
                   className="rounded-full cursor-pointer bg-muted p-2"
                   key={platform.name}
                   onClick={() => {
+                    addCounter("share");
                     setModalShare({
                       show: true,
                       shareUrl: platform.getShareUrl(window.location.href),
