@@ -82,9 +82,7 @@ const Navigation = () => {
         </li>
         <li>
           <div className="flex justify-end items-center gap-4 min-h-9">
-            {pathname !== "/" ? (
-              <></>
-            ) : (
+            {pathname !== "/auth" && !user && (
               <Button variant={"secondary"} onClick={() => push("/auth")}>
                 <span className="max-sm:hidden">Start Writing!</span>
                 <span className="sm:hidden">
@@ -104,7 +102,7 @@ const Navigation = () => {
                 {theme}
               </span>
             </Button>
-            {pathname !== "/" && !pathname.includes("auth") && (
+            {pathname !== "/" && !pathname.includes("auth") && !!user && (
               <DropdownNavMenu user={user} />
             )}
           </div>
