@@ -239,6 +239,7 @@ export const BlogEditor = ({
             </span>
             <input
               id="share-link"
+              disabled
               ref={urlInputRef}
               type="text"
               readOnly
@@ -275,10 +276,15 @@ export const BlogEditor = ({
                   key={platform.name}
                   onClick={() => {
                     addCounter("share");
-                    setModalShare({
-                      show: true,
-                      shareUrl: platform.getShareUrl(window.location.href),
-                    });
+                    const stringTitle =
+                      data?.title?.replace(/<[^>]*>/g, "") || "";
+                    window.open(
+                      platform.getShareUrl(
+                        modalShare.shareUrl || "",
+                        stringTitle
+                      ),
+                      "_blank"
+                    );
                   }}
                 >
                   <platform.icon

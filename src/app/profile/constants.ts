@@ -41,11 +41,15 @@ export const SharePlatforms: TSharePlatform[] = [
     name: "LinkedIn",
     icon: Linkedin,
     color: "bg-blue-700 hover:bg-blue-800",
-    baseUrl: "https://www.linkedin.com/shareArticle",
-    getShareUrl: (url, title = "Check this out!") =>
-      `${SharePlatforms[2].baseUrl}?mini=true&url=${encodeURIComponent(
-        url
-      )}&title=${encodeURIComponent(title)}`,
+    // Use the feed share intent instead
+    baseUrl: "https://www.linkedin.com/feed/",
+    getShareUrl: (url, title = "Check this out!") => {
+      // We combine the title and url into one 'text' parameter
+      const shareText = `Go check this post! ${title} ${url}`;
+      return `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(
+        shareText
+      )}`;
+    },
   },
   {
     name: "WhatsApp",
