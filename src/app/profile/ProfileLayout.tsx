@@ -33,7 +33,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import UserCard from "@/components/ui/UserCard";
 import PostCard from "@/components/ui/PostCard";
-import { useRouter } from "next/navigation";
 
 const ProfileLayout = ({
   data,
@@ -49,8 +48,6 @@ const ProfileLayout = ({
     data?: Partial<TPost>;
   }>();
   const [tab, setTab] = useState("posts");
-
-  const { push } = useRouter();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
 
@@ -351,7 +348,6 @@ const ProfileLayout = ({
                             <PostCard
                               data={bookmark}
                               key={bookmark.id}
-                              onClick={() => push(`/post/${bookmark.id}`)}
                             />
                           );
                         })

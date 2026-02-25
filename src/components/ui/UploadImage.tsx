@@ -15,20 +15,17 @@ type TProps = {
   imageClassName?: string;
   onChange: (url: string, file?: File) => void;
   disabled?: boolean;
-  // onSave: (file: File) => void
 };
 
 export default function ImageUploader({
   label,
   value,
   onChange,
-  // onSave,
   mode = "base",
   layout = "fixed",
   imageClassName,
   disabled = false,
 }: TProps) {
-  // const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(value || null);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -39,7 +36,6 @@ export default function ImageUploader({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile && selectedFile.type.startsWith("image/")) {
-      // setFile(selectedFile);
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreview(objectUrl);
       if (mode === "base") onChange(objectUrl, selectedFile);
@@ -54,7 +50,6 @@ export default function ImageUploader({
   };
 
   const handleRemove = () => {
-    // setFile(null);
     setPreview(null);
     if (inputRef.current) inputRef.current.value = "";
     onChange("");
@@ -153,7 +148,8 @@ export default function ImageUploader({
           <p
             className={cn(
               "text-sm mb-2 transition-opacity duration-300",
-              preview ? "text-muted-foreground" : "text-muted-foreground/80"
+              preview ? "text-muted-foreground" : "text-muted-foreground/80",
+              preview && !isEditing && "bg-background/50 p-1 rounded"
             )}
           >
             {preview

@@ -69,7 +69,6 @@ const Search = () => {
                 <PostCard
                   data={post}
                   key={post.id}
-                  onClick={() => push(`/post/${post.id}`)}
                 />
               );
             })}

@@ -8,11 +8,9 @@ import { getAllPosts } from "@/lib/api/post";
 import { getAllUsers } from "@/lib/api/user";
 import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const Dashboard = () => {
-  const { push } = useRouter();
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -85,7 +83,6 @@ const Dashboard = () => {
                   <PostCard
                     data={post}
                     key={post.id}
-                    onClick={() => push(`/post/${post.id}`)}
                   />
                 );
               })}

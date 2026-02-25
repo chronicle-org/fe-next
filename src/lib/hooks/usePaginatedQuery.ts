@@ -9,15 +9,6 @@ import { debounce } from "../utils";
 import { AxiosResponse } from "axios";
 import { TApiErrorResponse, TApiResponsePagination } from "../api";
 
-// interface TApiResponsePagination<T> {
-//   data: T | null;
-//   total: number;
-// }
-// interface AxiosResponse<T> {
-//   data: T;
-//   status: number;
-// }
-
 type PaginationState<TFilters extends Record<string, unknown>> = {
   currentPage: number;
   limit: number;

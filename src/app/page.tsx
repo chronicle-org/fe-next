@@ -4,12 +4,10 @@ import PostCard from "@/components/ui/PostCard";
 import { getAllPosts } from "@/lib/api/post";
 import Image from "next/image";
 import { SearchBar } from "@/components/ui/SearchBar";
-import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
 
 export default function Home() {
-  const { push } = useRouter();
 
   const {
     data: posts,
@@ -58,7 +56,6 @@ export default function Home() {
               <PostCard
                 data={item}
                 key={item.id}
-                onClick={() => push(`/post/${item.id}`)}
               />
             ))}
           </div>

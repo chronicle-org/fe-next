@@ -72,7 +72,7 @@ export const BlogEditor = ({
   const user = useUserStore((state) => state.user);
   const updateUserStore = useUserStore((state) => state.setUser);
   const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
-    data || initPayloadData
+    data || initPayloadData,
   );
   const initRef = useRef(false);
   const [modalShare, setModalShare] = useState<{
@@ -85,7 +85,7 @@ export const BlogEditor = ({
   const formRef = useRef<HTMLFormElement>(null);
   const ReactQuill = useMemo(
     () => dynamic(() => import("react-quill-new"), { ssr: false }),
-    []
+    [],
   );
 
   const { mutate: upload, isPending: isUploadingFile } = useMutation({
@@ -131,7 +131,7 @@ export const BlogEditor = ({
             const err = error as TApiErrorResponse;
             toast.error(err.response?.data.error);
           },
-        }
+        },
       );
     else {
       if (data?.id) await updatePost({ id: data.id, data: rest });
@@ -252,7 +252,7 @@ export const BlogEditor = ({
                 "inline-flex items-center px-4 py-2 rounded-r-lg text-sm font-medium transition duration-150 ease-in-out cursor-pointer",
                 copied
                   ? "bg-green-500 text-white"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
+                  : "bg-blue-500 text-white hover:bg-blue-600",
               )}
             >
               {copied ? (
@@ -281,9 +281,9 @@ export const BlogEditor = ({
                     window.open(
                       platform.getShareUrl(
                         modalShare.shareUrl || "",
-                        stringTitle
+                        stringTitle,
                       ),
-                      "_blank"
+                      "_blank",
                     );
                   }}
                 >
@@ -452,12 +452,15 @@ export const BlogEditor = ({
                         : "var(--muted-foreground)"
                     }
                     fill={user?.likes?.includes(data?.id || 0) ? "red" : "none"}
-                    className="w-5 h-5 cursor-pointer"
-                    onClick={() =>
+                    className={cn("w-5 h-5", user ? "cursor-pointer" : "")}
+                    onClick={() => {
+                      if (!user) return;
                       countInteraction(
-                        user?.likes?.includes(data?.id || 0) ? "unlike" : "like"
-                      )
-                    }
+                        user?.likes?.includes(data?.id || 0)
+                          ? "unlike"
+                          : "like",
+                      );
+                    }}
                   />
                   <Bookmark
                     color={
@@ -470,14 +473,15 @@ export const BlogEditor = ({
                         ? "yellow"
                         : "none"
                     }
-                    className="w-5 h-5 cursor-pointer"
-                    onClick={() =>
+                    className={cn("w-5 h-5", user ? "cursor-pointer" : "")}
+                    onClick={() => {
+                      if (!user) return;
                       countInteraction(
                         user?.bookmarks?.includes(data?.id || 0)
                           ? "unbookmark"
-                          : "bookmark"
-                      )
-                    }
+                          : "bookmark",
+                      );
+                    }}
                   />
                   <div
                     className="cursor-pointer flex gap-2 items-center bg-muted text-muted-foreground px-2 py-1 rounded"
