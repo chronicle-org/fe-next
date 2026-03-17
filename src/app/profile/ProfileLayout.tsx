@@ -9,7 +9,7 @@ import { useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
 import "react-quill-new/dist/quill.bubble.css";
 import { fileUploadKey } from "@/lib/constants";
-import { findOne, TPost } from "@/lib/api/post";
+import { findOne, TPost, getDrafts } from "@/lib/api/post";
 import ImageUploader from "@/components/ui/UploadImage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { uploadFile } from "@/lib/api/file";
@@ -138,6 +138,20 @@ const ProfileLayout = ({
     },
   });
 
+  const { data: drafts, isFetching: isFetchingDrafts } = useQuery({
+    enabled: tab === "drafts" && !isVisit,
+    queryKey: ["drafts", data.id],
+    queryFn: async () => {
+      try {
+        const res = await getDrafts(data.id, { page: 1, limit: 50, search: "" });
+        return res.data.content?.data || [];
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
   return (
     <div className="sm:my-10 sm:mx-auto flex flex-col gap-10 w-full sm:max-w-[80vw]">
       <div className="flex flex-col gap-2.5 lg:gap-10 relative w-full">
@@ -255,6 +269,15 @@ const ProfileLayout = ({
                   <Bookmark className="w-5 h-5" />
                   Bookmarks
                 </TabsTrigger>
+                {!isVisit && (
+                  <TabsTrigger
+                    value="drafts"
+                    onClick={() => setTab("drafts")}
+                  >
+                    <BookIcon className="w-5 h-5" />
+                    Drafts
+                  </TabsTrigger>
+                )}
               </TabsList>
               <TabsContent value="posts">
                 {isFetchingParamPostId ? (
@@ -348,6 +371,42 @@ const ProfileLayout = ({
                             <PostCard
                               data={bookmark}
                               key={bookmark.id}
+                            />
+                          );
+                        })
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="drafts">
+                <div className="flex flex-col gap-2.5 mx-2.5">
+                  {isFetchingDrafts ? (
+                    Array(5)
+                      .fill("")
+                      .map((_, index) => {
+                        return (
+                          <Skeleton
+                            className="h-[125px] rounded-xl w-full"
+                            key={index}
+                          />
+                        );
+                      })
+                  ) : (
+                    <>
+                      {!drafts?.length ? (
+                        <div>No drafts</div>
+                      ) : (
+                        drafts?.map((draft) => {
+                          return (
+                            <PostCard
+                              data={draft}
+                              key={draft.id}
+                              onClick={() => {
+                                setEdit({ status: true, data: draft });
+                                if (draft.id)
+                                  setParam("post_id", (draft.id as number).toString());
+                              }}
                             />
                           );
                         })

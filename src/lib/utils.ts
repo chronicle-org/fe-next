@@ -69,3 +69,18 @@ export const debounce = <Args extends unknown[], Return>(
     timer = setTimeout(() => func.apply(this, args), delay);
   };
 };
+
+export const calculateReadingTime = (htmlContent: string): number => {
+  // Remove HTML tags
+  const plainText = htmlContent.replace(/<[^>]*>/g, "");
+
+  // Count words (average reading speed: 200 words per minute)
+  const wordCount = plainText
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+
+  const readingTimeMinutes = Math.ceil(wordCount / 200);
+
+  return Math.max(1, readingTimeMinutes); // Minimum 1 minute
+};

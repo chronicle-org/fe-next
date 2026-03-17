@@ -18,6 +18,7 @@ import {
   TPost,
   updateCounter,
   updateInteraction,
+  publishDraft,
 } from "@/lib/api/post";
 import {
   fileUploadKey,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/constants";
 import { useUserStore } from "@/lib/stores/user.store";
 import { InteractionType } from "@/lib/types";
-import { updateCookie } from "@/lib/utils";
+import { updateCookie, calculateReadingTime } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import HTMLReactParser from "html-react-parser/lib/index";
 import {
@@ -74,6 +75,7 @@ export const BlogEditor = ({
   const [formData, setFormData] = useState<Partial<typeof initPayloadData>>(
     data || initPayloadData,
   );
+  const [isDraft, setIsDraft] = useState<boolean>(data?.is_draft || false);
   const initRef = useRef(false);
   const [modalShare, setModalShare] = useState<{
     show: boolean;
@@ -87,6 +89,10 @@ export const BlogEditor = ({
     () => dynamic(() => import("react-quill-new"), { ssr: false }),
     [],
   );
+
+  const estimatedReadingTime = useMemo(() => {
+    return formData.content ? calculateReadingTime(formData.content) : 0;
+  }, [formData.content]);
 
   const { mutate: upload, isPending: isUploadingFile } = useMutation({
     mutationFn: (data: { file: File; type: keyof typeof fileUploadKey }) =>
@@ -110,6 +116,18 @@ export const BlogEditor = ({
     },
   });
 
+  const { mutate: publishDraftPost, isPending: isPublishingDraft } =
+    useMutation({
+      mutationFn: (id: number) => publishDraft(id),
+      onSuccess: () => {
+        toast.success("Draft published successfully!");
+        onBack?.();
+      },
+      onError: (err: TApiErrorResponse) => {
+        toast.error(err.response?.data.error);
+      },
+    });
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const { thumbnail_file, ...rest } = formData;
@@ -123,9 +141,11 @@ export const BlogEditor = ({
               sub_title: formData.sub_title,
               thumbnail_url: res.data.content?.url,
               content: formData.content,
+              is_draft: isDraft,
             };
             if (data?.id) await updatePost({ id: data.id, data: newData });
-            else await submitPost(newData as TAddPostPayload);
+            else
+              await submitPost(newData as TAddPostPayload);
           },
           onError: (error) => {
             const err = error as TApiErrorResponse;
@@ -134,8 +154,9 @@ export const BlogEditor = ({
         },
       );
     else {
-      if (data?.id) await updatePost({ id: data.id, data: rest });
-      else await submitPost(rest as TAddPostPayload);
+      const dataToSubmit = { ...rest, is_draft: isDraft };
+      if (data?.id) await updatePost({ id: data.id, data: dataToSubmit });
+      else await submitPost(dataToSubmit as TAddPostPayload);
     }
   };
 
@@ -331,6 +352,33 @@ export const BlogEditor = ({
                   )}
                 </div>
 
+                {estimatedReadingTime > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {estimatedReadingTime} min read
+                  </span>
+                )}
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isDraft}
+                    onChange={(e) => setIsDraft(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Save as Draft</span>
+                </label>
+
+                {data?.id && data.is_draft && (
+                  <Button
+                    variant={"default"}
+                    type="button"
+                    disabled={isPublishingDraft}
+                    onClick={() => publishDraftPost(data.id!)}
+                  >
+                    Publish
+                  </Button>
+                )}
+
                 <Button
                   variant={"secondary"}
                   type="submit"
@@ -338,7 +386,7 @@ export const BlogEditor = ({
                     isUploadingFile || isSubmittingPost || isUpdatingPost
                   }
                 >
-                  Submit
+                  {data?.id ? "Update" : "Submit"}
                 </Button>
               </div>
             )}

@@ -30,6 +30,8 @@ export type TPost = {
   view_count: number;
   likes_count: number;
   likes: number[];
+  is_draft: boolean;
+  reading_time: number;
   user: Partial<TLoginResponse>;
 };
 
@@ -59,7 +61,9 @@ export const findOne = async (id: number) => {
 export type TAddPostPayload = Pick<
   TPost,
   "title" | "sub_title" | "thumbnail_url" | "content"
->;
+> & {
+  is_draft?: boolean;
+};
 export const addPost = async (payload: TAddPostPayload) => {
   return postMethod<typeof payload, TApiResponse<TPost>>(`${baseUrl}`, payload);
 };
@@ -96,4 +100,20 @@ export const updateCounter = (
     undefined,
     TApiResponse<{ post: TPost; user: TLoginResponse }>
   >(`${baseUrl}/counter/${actionType}/${postId}`);
+};
+
+export const getDrafts = async (
+  userId: number,
+  params: TFetchFunctionParams
+) => {
+  return getMethod<TApiResponsePagination<TPost[]>>(
+    `${baseUrl}/user/${userId}/drafts?page=${params.page}&limit=${params.limit}`
+  );
+};
+
+export const publishDraft = async (postId: number) => {
+  return putMethod<undefined, TApiResponse<TPost>>(
+    `${baseUrl}/${postId}/publish`,
+    undefined
+  );
 };

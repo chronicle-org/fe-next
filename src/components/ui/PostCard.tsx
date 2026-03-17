@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import { useMemo } from "react";
 import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
-import { cn } from "@/lib/utils";
+import { cn, calculateReadingTime } from "@/lib/utils";
 import { Button } from "./Button";
 import { Bookmark, Heart, UserIcon } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +35,10 @@ const PostCard = ({
     const days = Math.floor(hours / 24);
     return `${days} day${days > 1 ? "s" : ""} ago`;
   }, [data.created_at]);
+
+  const readingTime = useMemo(() => {
+    return data.reading_time || (data.content ? calculateReadingTime(data.content) : 0);
+  }, [data.reading_time, data.content]);
 
   const layout = (
     <div
@@ -122,8 +126,9 @@ const PostCard = ({
           </div>
         </div>
 
-        <p className="text-end text-xs text-muted-foreground">
-          {postCreateRelativeTime}
+        <p className="text-end text-xs text-muted-foreground flex gap-2 justify-end">
+          <span>{postCreateRelativeTime}</span>
+          {readingTime ? <span>• {readingTime} min read</span> : null}
         </p>
 
         <div className="flex gap-5 items-center">
