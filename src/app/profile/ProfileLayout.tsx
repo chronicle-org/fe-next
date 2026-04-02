@@ -33,6 +33,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import UserCard from "@/components/ui/UserCard";
 import PostCard from "@/components/ui/PostCard";
+import {
+  getNotificationSettings,
+  TNotificationSettingsPayload,
+  updateNotificationSettings,
+} from "@/lib/api/notification";
+import { Label } from "@radix-ui/react-dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { NotificationsIcon } from "@/components/Icons";
 
 const ProfileLayout = ({
   data,
@@ -143,7 +151,11 @@ const ProfileLayout = ({
     queryKey: ["drafts", data.id],
     queryFn: async () => {
       try {
-        const res = await getDrafts(data.id, { page: 1, limit: 50, search: "" });
+        const res = await getDrafts(data.id, {
+          page: 1,
+          limit: 50,
+          search: "",
+        });
         return res.data.content?.data || [];
       } catch (error) {
         const err = error as TApiErrorResponse;
@@ -151,6 +163,53 @@ const ProfileLayout = ({
       }
     },
   });
+
+  const {
+    data: notificationSettings,
+    isFetching: isFetchingNotificationSettings,
+    refetch: refetchNotificationSettings,
+  } = useQuery({
+    queryKey: ["notifications-settings"],
+    queryFn: async () => {
+      const res = await getNotificationSettings();
+      return res.data.content;
+    },
+  });
+
+  const { mutate: toggleNotification, isPending: isTogglingNotification } =
+    useMutation({
+      mutationFn: (data: Partial<TNotificationSettingsPayload>) =>
+        updateNotificationSettings(data),
+    });
+
+  const handleToggleNotification = (checked: boolean) => {
+    const payload = !checked
+      ? [
+          ...(notificationSettings?.notify_followed_posts_from_users.filter(
+            (id) => id !== data.id,
+          ) || []),
+        ]
+      : [
+          ...(notificationSettings?.notify_followed_posts_from_users || []),
+          data.id,
+        ];
+
+    toggleNotification(
+      {
+        notify_followed_posts_from_users: payload,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`You ${checked ? "will" : "won't"} be notified of their new posts`);
+          refetchNotificationSettings();
+        },
+        onError: (error) => {
+          const err = error as TApiErrorResponse;
+          toast.error(err.response?.data.error);
+        },
+      },
+    );
+  };
 
   return (
     <div className="sm:my-10 sm:mx-auto flex flex-col gap-10 w-full sm:max-w-[80vw]">
@@ -174,7 +233,7 @@ const ProfileLayout = ({
                         const err = error as TApiErrorResponse;
                         toast.error(err.response?.data.error);
                       },
-                    }
+                    },
                   );
               }}
               disabled={isUploadingFile || isUpdatingProfile}
@@ -215,7 +274,7 @@ const ProfileLayout = ({
                     const err = error as TApiErrorResponse;
                     toast.error(err.response?.data.error);
                   },
-                }
+                },
               );
             }}
             onUpdateProfile={updateProfileData}
@@ -241,7 +300,7 @@ const ProfileLayout = ({
               <TabsList
                 className={cn(
                   "max-sm:self-center max-w-full overflow-auto justify-start",
-                  "max-[400px]:rounded-none"
+                  "max-[400px]:rounded-none",
                 )}
               >
                 <TabsTrigger value="posts" onClick={() => setTab("posts")}>
@@ -270,16 +329,30 @@ const ProfileLayout = ({
                   Bookmarks
                 </TabsTrigger>
                 {!isVisit && (
-                  <TabsTrigger
-                    value="drafts"
-                    onClick={() => setTab("drafts")}
-                  >
+                  <TabsTrigger value="drafts" onClick={() => setTab("drafts")}>
                     <BookIcon className="w-5 h-5" />
                     Drafts
                   </TabsTrigger>
                 )}
               </TabsList>
               <TabsContent value="posts">
+                {isVisit && (
+                  <div className="flex items-center space-x-2 w-full justify-end mb-4">
+                    <Switch
+                      className="cursor-pointer"
+                      disabled={
+                        isFetchingNotificationSettings || isTogglingNotification
+                      }
+                      defaultChecked={notificationSettings?.notify_followed_posts_from_users.includes(
+                        data.id,
+                      )}
+                      onCheckedChange={handleToggleNotification}
+                    />
+                    <Label>
+                      <NotificationsIcon height={30} width={30} />
+                    </Label>
+                  </div>
+                )}
                 {isFetchingParamPostId ? (
                   <PostSkeleton />
                 ) : (
@@ -367,12 +440,7 @@ const ProfileLayout = ({
                         <div>No bookmarks</div>
                       ) : (
                         bookmarks?.map((bookmark) => {
-                          return (
-                            <PostCard
-                              data={bookmark}
-                              key={bookmark.id}
-                            />
-                          );
+                          return <PostCard data={bookmark} key={bookmark.id} />;
                         })
                       )}
                     </>
@@ -405,7 +473,10 @@ const ProfileLayout = ({
                               onClick={() => {
                                 setEdit({ status: true, data: draft });
                                 if (draft.id)
-                                  setParam("post_id", (draft.id as number).toString());
+                                  setParam(
+                                    "post_id",
+                                    (draft.id as number).toString(),
+                                  );
                               }}
                             />
                           );

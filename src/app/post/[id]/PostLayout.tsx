@@ -35,7 +35,13 @@ export const PostLayout = ({ id }: { id?: number }) => {
       <BlogEditor
         data={data}
         isVisit
-        onBack={() => back()}
+        onBack={() => {
+          if (window.history.length > 1) {
+            back();
+          } else {
+            push("/dashboard");
+          }
+        }}
         isPostView
         onUpdatePostCounter={(post) =>
           queryClient.setQueryData([`post-data-${id}`], post)

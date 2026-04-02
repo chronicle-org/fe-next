@@ -5,14 +5,12 @@ import { cn } from "@/lib/utils";
 import { UserIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 const UserCard = ({
   user,
 }: {
   user: Omit<TLoginResponse, "acccess_token">;
 }) => {
-  const { push } = useRouter();
   return (
     <Link href={`/profile/${user.id}`}>
       <div
@@ -20,7 +18,6 @@ const UserCard = ({
           "flex flex-col gap-2.5 w-[150px] aspect-square text-sm",
           "border border-muted rounded-2xl p-2.5 cursor-pointer"
         )}
-        onClick={() => push(`/profile/${user.id}`)}
       >
         <div className="flex gap-2.5 items-center overflow-hidden max-w-full">
           {!user.picture_url ? (

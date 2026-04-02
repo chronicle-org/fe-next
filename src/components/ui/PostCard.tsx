@@ -12,6 +12,11 @@ import { Button } from "./Button";
 import { Bookmark, Heart, UserIcon } from "lucide-react";
 import Link from "next/link";
 
+// Remove anchor tags from HTML to prevent nested <a> tags (hydration error)
+const sanitizeHtmlContent = (html: string): string => {
+  return html.replace(/<a[^>]*>(.*?)<\/a>/gi, "$1");
+};
+
 const PostCard = ({
   data,
   onClick,
@@ -82,19 +87,19 @@ const PostCard = ({
               className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!"
               onClick={(e) => e.stopPropagation()}
             >
-              {HTMLReactParser(data.title || "")}
+              {HTMLReactParser(sanitizeHtmlContent(data.title || ""))}
             </div>
             <div
               className="line-clamp-2 w-fit! h-fit! p-0! ql-editor overflow-hidden!"
               onClick={(e) => e.stopPropagation()}
             >
-              {HTMLReactParser(data.sub_title || "")}
+              {HTMLReactParser(sanitizeHtmlContent(data.sub_title || ""))}
             </div>
             <div
               className="max-md:hidden line-clamp-2 w-fit! h-fit! overflow-hidden! p-0! mt-5 ql-editor"
               onClick={(e) => e.stopPropagation()}
             >
-              {HTMLReactParser(data.content || "")}
+              {HTMLReactParser(sanitizeHtmlContent(data.content || ""))}
             </div>
           </div>
 

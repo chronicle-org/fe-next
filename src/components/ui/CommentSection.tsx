@@ -42,7 +42,7 @@ export const CommentSection = ({
 
   const { mutate: post, isPending: isPosting } = useMutation({
     mutationFn: () =>
-      postComment({ user_id: userId!, post_id: postId!, content: comment }),
+      postComment({ post_id: postId!, content: comment }),
     onSuccess: async () => {
       toast.success("Comment posted");
       setComment("");

@@ -14,11 +14,11 @@ export type TComment = {
 };
 
 export const getAllByPostId = (postId: number) => {
-  return getMethod<TApiResponse<TComment[]>>(`${baseUrl}/${postId}`);
+  return getMethod<TApiResponse<TComment[]>>(`${baseUrl}/post/${postId}`);
 };
 
 export const postComment = (
-  payload: Pick<TComment, "user_id" | "post_id" | "content">
+  payload: Pick<TComment, "post_id" | "content">
 ) => {
   return postMethod<typeof payload, TApiResponse<TComment>>(
     `${baseUrl}`,

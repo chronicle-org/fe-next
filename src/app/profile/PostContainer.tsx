@@ -107,7 +107,7 @@ export const PostContainer = ({
               <PostCard
                 data={post}
                 key={post.id}
-                onClick={() => onEdit(post)}
+                onClick={() => (isVisit ? undefined : onEdit(post))}
                 onDelete={
                   isVisit
                     ? undefined
