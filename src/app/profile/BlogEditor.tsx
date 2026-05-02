@@ -130,22 +130,23 @@ export const BlogEditor = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const { thumbnail_file, ...rest } = formData;
-    if (!!thumbnail_file)
+    const newData = {
+      title: formData.title,
+      sub_title: formData.sub_title,
+      content: formData.content,
+      is_draft: isDraft,
+    };
+    if (!!formData.thumbnail_file)
       await upload(
-        { file: thumbnail_file, type: 1 },
+        { file: formData.thumbnail_file, type: 1 },
         {
           onSuccess: async (res) => {
-            const newData = {
-              title: formData.title,
-              sub_title: formData.sub_title,
-              thumbnail_url: res.data.content?.url,
-              content: formData.content,
-              is_draft: isDraft,
-            };
-            if (data?.id) await updatePost({ id: data.id, data: newData });
-            else
-              await submitPost(newData as TAddPostPayload);
+            if (data?.id)
+              await updatePost({
+                id: data.id,
+                data: { ...newData, thumbnail_url: res.data.content?.url },
+              });
+            else await submitPost({ ...newData, thumbnail_url: res.data.content?.url } as TAddPostPayload);
           },
           onError: (error) => {
             const err = error as TApiErrorResponse;
@@ -154,7 +155,7 @@ export const BlogEditor = ({
         },
       );
     else {
-      const dataToSubmit = { ...rest, is_draft: isDraft };
+      const dataToSubmit = { ...newData, is_draft: isDraft };
       if (data?.id) await updatePost({ id: data.id, data: dataToSubmit });
       else await submitPost(dataToSubmit as TAddPostPayload);
     }
