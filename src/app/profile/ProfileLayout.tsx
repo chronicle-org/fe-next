@@ -1,6 +1,13 @@
 "use client";
 
-import { BookIcon, Bookmark, ImageIcon, UserPlus, Users } from "lucide-react";
+import {
+  BookIcon,
+  Bookmark,
+  Heart,
+  ImageIcon,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { TLoginResponse } from "@/lib/api/auth";
 import { cn, getCookie, setCookie } from "@/lib/utils";
 import { useUpdateParam } from "@/lib/utils-client";
@@ -19,6 +26,7 @@ import {
   getBookmarks,
   getFollowers,
   getFollowing,
+  getLikes,
   TUpdatePayload,
   updateProfile,
 } from "@/lib/api/user";
@@ -138,6 +146,20 @@ const ProfileLayout = ({
     queryFn: async () => {
       try {
         const res = await getBookmarks(data.id);
+        return res.data.content;
+      } catch (error) {
+        const err = error as TApiErrorResponse;
+        toast.error(err.response?.data.error);
+      }
+    },
+  });
+
+  const { data: likes, isFetching: isFetchingLikes } = useQuery({
+    enabled: tab === "likes",
+    queryKey: ["likes", data.id],
+    queryFn: async () => {
+      try {
+        const res = await getLikes(data.id);
         return res.data.content;
       } catch (error) {
         const err = error as TApiErrorResponse;
@@ -328,6 +350,10 @@ const ProfileLayout = ({
                   <Bookmark className="w-5 h-5" />
                   Bookmarks
                 </TabsTrigger>
+                <TabsTrigger value="likes" onClick={() => setTab("likes")}>
+                  <Heart className="w-5 h-5" />
+                  Liked
+                </TabsTrigger>
                 {!isVisit && (
                   <TabsTrigger value="drafts" onClick={() => setTab("drafts")}>
                     <BookIcon className="w-5 h-5" />
@@ -441,6 +467,32 @@ const ProfileLayout = ({
                       ) : (
                         bookmarks?.map((bookmark) => {
                           return <PostCard data={bookmark} key={bookmark.id} />;
+                        })
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="likes">
+                <div className="flex flex-col gap-2.5 mx-2.5">
+                  {isFetchingLikes ? (
+                    Array(5)
+                      .fill("")
+                      .map((_, index) => {
+                        return (
+                          <Skeleton
+                            className="h-[125px] rounded-xl w-full"
+                            key={index}
+                          />
+                        );
+                      })
+                  ) : (
+                    <>
+                      {!likes?.length ? (
+                        <div>No liked posts</div>
+                      ) : (
+                        likes?.map((post) => {
+                          return <PostCard data={post} key={post.id} />;
                         })
                       )}
                     </>
