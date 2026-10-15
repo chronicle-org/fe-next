@@ -3,8 +3,16 @@ import type { TPost } from "@/lib/api/post";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-/** Public site origin, used for absolute URLs in metadata and the sitemap. */
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+/**
+ * Public site origin, used for absolute URLs in metadata and the sitemap.
+ * Falls back to the Vercel production domain when NEXT_PUBLIC_SITE_URL is unset.
+ */
+export const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : undefined)
+)?.replace(/\/$/, "");
 
 /**
  * Fetches a published post on the server for metadata and the first render.
