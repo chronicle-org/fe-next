@@ -21,16 +21,19 @@ import { logUserOut, TLoginResponse } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
 import {
+  CheckCheck,
   GalleryThumbnailsIcon,
   Pencil,
   Settings,
   UserIcon,
+  X,
 } from "lucide-react";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
 import { SearchBar } from "./SearchBar";
 import { useNotificationStore } from "@/lib/stores/notification.store";
 import {
+  deleteNotification,
   getNotifications,
   markNotificationsAsRead,
   NOTIFICATION_TYPE_ENUM,
@@ -42,6 +45,7 @@ import {
   useInfiniteQuery,
   useMutation,
 } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 const Navigation = () => {
   const { theme, setTheme } = useTheme();
@@ -60,6 +64,14 @@ const Navigation = () => {
   const onOpenNotifications = useStore(
     useNotificationStore,
     (s) => s.onOpenNotifications,
+  );
+  const removeNotification = useStore(
+    useNotificationStore,
+    (s) => s.removeNotification,
+  );
+  const markNotificationsRead = useStore(
+    useNotificationStore,
+    (s) => s.markNotificationsRead,
   );
   const searchParams = useSearchParams();
 
@@ -115,23 +127,45 @@ const Navigation = () => {
   const { mutate: markAsRead } = useMutation({
     mutationFn: async (ids: number[]) => await markNotificationsAsRead(ids),
     onSuccess: (res) => {
-      setNotifications(
-        notifications.map((notification) => {
-          if (res.data.content?.some((read) => read.id === notification.id)) {
-            return { ...notification, read: true };
-          }
-          return notification;
-        }),
+      markNotificationsRead((res.data.content || []).map((read) => read.id));
+    },
+    onError: (err: TApiErrorResponse) => {
+      toast.error(
+        err.response?.data.message || "Failed to mark notifications as read",
       );
     },
   });
 
-  const onCloseNotifications = (ids: number[]) => {
+  const { mutate: dismissNotification } = useMutation({
+    mutationFn: async (id: number) => await deleteNotification(id),
+    onMutate: (id) => {
+      const previous = useNotificationStore.getState().notifications;
+      removeNotification(id);
+      return { previous };
+    },
+    onError: (err: TApiErrorResponse, _id, context) => {
+      if (context?.previous) setNotifications(context.previous);
+      toast.error(
+        err.response?.data.message || "Failed to dismiss notification",
+      );
+    },
+  });
+
+  const onMarkAsRead = (ids: number[]) => {
     if (ids.length === 0) return;
     markAsRead(ids);
   };
 
-  const onCloseNotificationsWithDebounce = debounce(onCloseNotifications, 1000);
+  // Memoized so the pending timer survives re-renders; `markAsRead` from
+  // useMutation is referentially stable.
+  const onMarkAsReadWithDebounce = useMemo(
+    () =>
+      debounce((ids: number[]) => {
+        if (ids.length === 0) return;
+        markAsRead(ids);
+      }, 1000),
+    [markAsRead],
+  );
 
   return (
     <nav className="bg-[#151821] text-white w-full sticky top-0 z-50">
@@ -197,7 +231,9 @@ const Navigation = () => {
                   notifications={notifications}
                   newNotificationsCount={newNotificationsCount}
                   onOpenNotifications={onOpenNotifications}
-                  onCloseNotifications={onCloseNotificationsWithDebounce}
+                  onAutoMarkAsRead={onMarkAsReadWithDebounce}
+                  onMarkAllAsRead={onMarkAsRead}
+                  onDismiss={dismissNotification}
                   isFetching={isLoading}
                   movePage={fetchNextPage}
                   hasNextPage={hasNextPage || false}
@@ -272,14 +308,18 @@ const DropdownNotifications = ({
   notifications,
   newNotificationsCount,
   onOpenNotifications,
-  onCloseNotifications,
+  onAutoMarkAsRead,
+  onMarkAllAsRead,
+  onDismiss,
   movePage,
   hasNextPage,
 }: {
   notifications: TNotificationItem[];
   newNotificationsCount: number;
   onOpenNotifications: () => void;
-  onCloseNotifications: (ids: number[]) => void;
+  onAutoMarkAsRead: (ids: number[]) => void;
+  onMarkAllAsRead: (ids: number[]) => void;
+  onDismiss: (id: number) => void;
   isFetching: boolean;
   movePage: () => void;
   hasNextPage: boolean;
@@ -354,20 +394,14 @@ const DropdownNotifications = ({
     );
   };
 
-  const debounceMarkAsRead = debounce(
-    () =>
-      onCloseNotifications(
-        notifications
-          .filter((notification) => !notification.read)
-          .map((notification) => notification.id),
-      ),
-    1000,
-  );
+  const unreadIds = notifications
+    .filter((notification) => !notification.read)
+    .map((notification) => notification.id);
 
   const onToggleOpen = (open: boolean) => {
     if (open) {
       onOpenNotifications();
-      debounceMarkAsRead();
+      onAutoMarkAsRead(unreadIds);
     }
   };
 
@@ -395,19 +429,32 @@ const DropdownNotifications = ({
         align="end"
         className="max-h-[300px] overflow-y-auto"
       >
-        <DropdownMenuItem 
-          className="flex justify-end p-2 w-fit self-end ml-auto [&_svg]:pointer-events-auto! group"
-          onClick={() => push("/setting")}
-        >
-          <Settings
-            width={20}
-            height={20}
-            className={cn(
-              "group-hover:rotate-45 group-hover:text-gray-500",
-              "size-[20] cursor-pointer transition-all",
-            )}
-          />
-        </DropdownMenuItem>
+        <div className="flex items-center justify-between gap-2">
+          <DropdownMenuItem
+            className="p-2 w-fit text-sm"
+            disabled={unreadIds.length === 0}
+            onClick={(e) => {
+              e.preventDefault();
+              onMarkAllAsRead(unreadIds);
+            }}
+          >
+            <CheckCheck width={16} height={16} className="size-[16]" />
+            Mark all as read
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="flex justify-end p-2 w-fit [&_svg]:pointer-events-auto! group"
+            onClick={() => push("/setting")}
+          >
+            <Settings
+              width={20}
+              height={20}
+              className={cn(
+                "group-hover:rotate-45 group-hover:text-gray-500",
+                "size-[20] cursor-pointer transition-all",
+              )}
+            />
+          </DropdownMenuItem>
+        </div>
         {!notifications.length ? (
           <DropdownMenuItem
             className="text-gray-500!"
@@ -423,11 +470,24 @@ const DropdownNotifications = ({
             return (
               <DropdownMenuItem
                 key={notification.id}
+                className={cn(!notification.read && "bg-accent/40")}
                 onClick={(e) => {
                   e.preventDefault();
                 }}
               >
                 {getNotificationLayout(notification)}
+                <button
+                  type="button"
+                  aria-label="Dismiss notification"
+                  className="shrink-0 self-start rounded-full p-1 text-gray-500 hover:text-foreground hover:bg-background [&_svg]:pointer-events-auto!"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDismiss(notification.id);
+                  }}
+                >
+                  <X width={14} height={14} className="size-[14]" />
+                </button>
               </DropdownMenuItem>
             );
           })
