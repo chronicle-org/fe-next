@@ -1,14 +1,78 @@
-
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import PostLayout from "./PostLayout";
+import { excerpt, getPublicPost, siteUrl, stripHtml } from "@/lib/server/post";
 
-const Post = async ({ params }: { params: Promise<{ id: string }> }) => {
+type Props = { params: Promise<{ id: string }> };
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const post = Number.isNaN(parseInt(id)) ? null : await getPublicPost(Number(id));
+  if (!post) return { title: "Chronicle" };
+
+  const title = stripHtml(post.title) || "Untitled";
+  const description =
+    excerpt(post.sub_title) || excerpt(post.content) || "Read on Chronicle.";
+  const images = post.thumbnail_url ? [post.thumbnail_url] : undefined;
+  const url = siteUrl ? `${siteUrl}/post/${post.id}` : undefined;
+
+  return {
+    title: `${title} | Chronicle`,
+    description,
+    alternates: url ? { canonical: url } : undefined,
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url,
+      images,
+      publishedTime: post.created_at,
+      modifiedTime: post.updated_at,
+      authors: post.user?.name ? [post.user.name] : undefined,
+      siteName: "Chronicle",
+    },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title,
+      description,
+      images,
+    },
+  };
+}
+
+const Post = async ({ params }: Props) => {
   const param = await params;
 
-  if (isNaN(parseInt(param.id))) redirect("/dashboard")
+  if (isNaN(parseInt(param.id))) redirect("/dashboard");
 
-  return <PostLayout id={Number(param.id)} />
+  const id = Number(param.id);
+  // Server-rendered so crawlers and link previews get the article, not a skeleton.
+  const initialPost = await getPublicPost(id);
+
+  return (
+    <>
+      {initialPost && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              headline: stripHtml(initialPost.title),
+              description: excerpt(initialPost.sub_title || initialPost.content),
+              image: initialPost.thumbnail_url || undefined,
+              datePublished: initialPost.created_at,
+              dateModified: initialPost.updated_at,
+              author: initialPost.user?.name
+                ? { "@type": "Person", name: initialPost.user.name }
+                : undefined,
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
+      )}
+      <PostLayout id={id} initialPost={initialPost ?? undefined} />
+    </>
+  );
 };
 
 export default Post;
