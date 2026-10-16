@@ -179,11 +179,10 @@ const Navigation = () => {
             className="flex gap-1 w-fit items-center"
           >
             <Image
-              src={"/chronicle-icon.png"}
+              src={"/chronicle-logo.svg"}
               alt="Chronicle"
-              width={20}
-              height={32}
-              className="rounded-md"
+              width={28}
+              height={28}
             />
             Chronicle
           </Link>
