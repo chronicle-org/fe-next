@@ -9,6 +9,7 @@ type NotificationStore = {
   removeNotification: (id: number) => void;
   markNotificationsRead: (ids: number[]) => void;
   onOpenNotifications: () => void;
+  clearNotifications: () => void;
 };
 
 const countUnread = (notifications: TNotificationItem[]) =>
@@ -51,5 +52,6 @@ export const useNotificationStore = create<NotificationStore>((set) => {
         };
       }),
     onOpenNotifications: () => set({ newNotificationsCount: 0 }),
+    clearNotifications: () => set({ notifications: [], newNotificationsCount: 0 }),
   };
 });

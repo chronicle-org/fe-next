@@ -76,7 +76,7 @@ const Navigation = () => {
   const searchParams = useSearchParams();
 
   const { isLoading, fetchNextPage, hasNextPage } = useInfiniteQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", user?.id],
     enabled: !!user,
     placeholderData: keepPreviousData,
     initialPageParam: 1,
@@ -85,12 +85,14 @@ const Navigation = () => {
         page: pageParam,
         limit: 6,
       });
+      // Read the latest store state; the render-time list can be stale
+      // (e.g. still holding the previous account's notifications)
+      const current = useNotificationStore.getState().notifications;
       const newNotifications = (res.data.content?.data || []).filter(
-        (newNotif) =>
-          !notifications.some((existing) => existing.id === newNotif.id),
+        (newNotif) => !current.some((existing) => existing.id === newNotif.id),
       );
       if (newNotifications.length > 0) {
-        setNotifications([...notifications, ...newNotifications]);
+        setNotifications([...current, ...newNotifications]);
       }
       return res;
     },
@@ -360,7 +362,8 @@ const DropdownNotifications = ({
               src={notification.actor.picture_url || ""}
               alt={notification.actor.name}
               fill
-              className="rounded-full"
+              sizes="45px"
+              className="rounded-full object-cover"
             />
           )}
         </div>
@@ -371,12 +374,13 @@ const DropdownNotifications = ({
           {!isFollow && (
             <>
               {notification.post?.thumbnail_url ? (
-                <div className="relative w-[40px] h-[30px]">
+                <div className="relative w-[40px] h-[30px] shrink-0">
                   <Image
                     src={notification.post?.thumbnail_url}
                     alt={"thumbnail"}
                     fill
-                    className="rounded-md"
+                    sizes="40px"
+                    className="rounded-md object-cover"
                   />
                 </div>
               ) : (
