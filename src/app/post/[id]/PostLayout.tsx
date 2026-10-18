@@ -3,18 +3,27 @@
 import { BlogEditor } from "@/app/profile/BlogEditor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TApiErrorResponse } from "@/lib/api";
-import { findOne } from "@/lib/api/post";
+import { findOne, TPost } from "@/lib/api/post";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export const PostLayout = ({ id }: { id?: number }) => {
+export const PostLayout = ({
+  id,
+  initialPost,
+}: {
+  id?: number;
+  initialPost?: TPost;
+}) => {
   const { push, back } = useRouter();
   const queryClient = useQueryClient();
 
   const { data, isFetching } = useQuery({
     enabled: id !== undefined,
     queryKey: [`post-data-${id}`],
+    initialData: initialPost,
+    // Server-fetched copy is fresh enough; skip an immediate refetch.
+    staleTime: initialPost ? 60_000 : 0,
     queryFn: async () => {
       try {
         const res = await findOne(Number(id));
@@ -28,7 +37,7 @@ export const PostLayout = ({ id }: { id?: number }) => {
     },
   });
 
-  if (isFetching || !id) return <PostSkeleton />;
+  if (!id || (isFetching && !data)) return <PostSkeleton />;
 
   return (
     <div className="py-10 max-w-[90vw] mx-auto w-full">

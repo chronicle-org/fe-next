@@ -6,6 +6,7 @@ import NoSSRNavigation from "@/components/ui/NoSSRNavigation";
 import ButtonBackToTop from "@/components/ui/ButtonBackToTop";
 import Providers from "./provider";
 import { Toaster } from "sonner";
+import { siteUrl } from "@/lib/server/post";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: siteUrl ? new URL(siteUrl) : undefined,
   title: "Chronicle",
   description: "Share your stories with the world.",
   openGraph: {
