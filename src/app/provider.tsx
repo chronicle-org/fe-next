@@ -3,9 +3,10 @@
 import {
   QueryClient,
   QueryClientProvider,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { socket } from "@/socket";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
@@ -35,8 +36,21 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 function SocketProvider({ children }: { children: React.ReactNode }) {
   const user = useStore(useUserStore, (s) => s.user);
   const setUser = useStore(useUserStore, (s) => s.setUser);
-  const notifications = useStore(useNotificationStore, (s) => s.notifications);
   const setNotifications = useStore(useNotificationStore, (s) => s.setNotifications);
+  const clearNotifications = useStore(useNotificationStore, (s) => s.clearNotifications);
+  const queryClient = useQueryClient();
+  const previousUserId = useRef(user?.id);
+
+  // Drop the previous account's notifications whenever the user logs out or switches
+  useEffect(() => {
+    if (previousUserId.current === user?.id) return;
+    previousUserId.current = user?.id;
+    clearNotifications();
+    queryClient.removeQueries({
+      queryKey: ["notifications"],
+      predicate: (query) => query.queryKey[1] !== user?.id,
+    });
+  }, [user?.id, clearNotifications, queryClient]);
 
   useEffect(() => {
     function onConnect() {
@@ -58,7 +72,10 @@ function SocketProvider({ children }: { children: React.ReactNode }) {
     function onNotification(notification: TNotificationItem) {
       // Handle incoming notification (e.g. show toast, update state, etc.)
       console.log("🔔 New notification received:", notification);
-      setNotifications([notification, ...notifications]);
+      setNotifications([
+        notification,
+        ...useNotificationStore.getState().notifications,
+      ]);
     }
 
     // Only connect if user is logged in
@@ -95,7 +112,7 @@ function SocketProvider({ children }: { children: React.ReactNode }) {
         socket.disconnect();
       }
     }
-  }, [user, setUser, notifications, setNotifications]);
+  }, [user, setUser, setNotifications]);
 
   return children;
 }
