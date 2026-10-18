@@ -62,6 +62,7 @@ export type TAddPostPayload = Pick<
   TPost,
   "title" | "sub_title" | "thumbnail_url" | "content"
 > & {
+  tags?: string;
   is_draft?: boolean;
 };
 export const addPost = async (payload: TAddPostPayload) => {

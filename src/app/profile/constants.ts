@@ -8,6 +8,7 @@ export const initPayloadData: TAddPostPayload & { thumbnail_file?: File } = {
   sub_title: "",
   thumbnail_url: "",
   content: "",
+  tags: "",
 };
 
 export type TSharePlatform = {

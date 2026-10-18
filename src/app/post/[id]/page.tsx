@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import PostLayout from "./PostLayout";
 import { excerpt, getPublicPost, siteUrl, stripHtml } from "@/lib/server/post";
+import { parseTags } from "@/lib/tags";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -15,10 +16,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     excerpt(post.sub_title) || excerpt(post.content) || "Read on Chronicle.";
   const images = post.thumbnail_url ? [post.thumbnail_url] : undefined;
   const url = siteUrl ? `${siteUrl}/post/${post.id}` : undefined;
+  const tags = parseTags(post.tags);
 
   return {
     title: `${title} | Chronicle`,
     description,
+    keywords: tags.length ? tags : undefined,
     alternates: url ? { canonical: url } : undefined,
     openGraph: {
       type: "article",
@@ -29,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
       authors: post.user?.name ? [post.user.name] : undefined,
+      tags: tags.length ? tags : undefined,
       siteName: "Chronicle",
     },
     twitter: {
@@ -63,6 +67,7 @@ const Post = async ({ params }: Props) => {
               image: initialPost.thumbnail_url || undefined,
               datePublished: initialPost.created_at,
               dateModified: initialPost.updated_at,
+              keywords: parseTags(initialPost.tags).join(", ") || undefined,
               author: initialPost.user?.name
                 ? { "@type": "Person", name: initialPost.user.name }
                 : undefined,
