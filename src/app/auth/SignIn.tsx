@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
+import Link from "next/link";
 import { TApiErrorResponse } from "@/lib/api";
 import { cn, setCookie } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -58,6 +59,7 @@ const SignIn = () => {
       >
         <div className="flex flex-col gap-5">
           <FancyInput
+            id="login-email"
             label="Email"
             type="email"
             required
@@ -66,6 +68,7 @@ const SignIn = () => {
             }
           />
           <FancyInput
+            id="login-password"
             label="Password"
             variant="password"
             required
@@ -78,6 +81,13 @@ const SignIn = () => {
         <Button type="submit" disabled={isLoggingIn}>
           {isLoggingIn ? <Spinner /> : "Login"}
         </Button>
+
+        <p className="text-sm text-center text-muted-foreground">
+          New to Chronicle?{" "}
+          <Link href="/auth/register" className="text-foreground underline">
+            Sign up
+          </Link>
+        </p>
       </form>
     </div>
   );
