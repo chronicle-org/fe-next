@@ -26,11 +26,22 @@ export type TLoginResponse = {
   bookmarks_count: number;
 };
 
+export type TRegisterPayload = TLoginPayload & {
+  name: string;
+};
+
 const baseUrl = "/auth";
 
 export const logUserIn = (payload: TLoginPayload) => {
   return postMethod<TLoginPayload, TApiResponse<TLoginResponse>>(
     `${baseUrl}/login`,
+    payload
+  );
+};
+
+export const registerUser = (payload: TRegisterPayload) => {
+  return postMethod<TRegisterPayload, TApiResponse<Partial<TLoginResponse>>>(
+    `${baseUrl}/register`,
     payload
   );
 };
