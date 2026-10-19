@@ -11,6 +11,7 @@ import { cn, calculateReadingTime } from "@/lib/utils";
 import { Button } from "./Button";
 import { Bookmark, Heart, UserIcon } from "lucide-react";
 import Link from "next/link";
+import { TagList } from "./TagList";
 
 // Remove anchor tags from HTML to prevent nested <a> tags (hydration error)
 const sanitizeHtmlContent = (html: string): string => {
@@ -130,6 +131,8 @@ const PostCard = ({
             )}
           </div>
         </div>
+
+        <TagList tags={data.tags} limit={3} className="mt-2" />
 
         <p className="text-end text-xs text-muted-foreground flex gap-2 justify-end">
           <span>{postCreateRelativeTime}</span>

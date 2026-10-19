@@ -38,6 +38,7 @@ import {
   Heart,
   LinkIcon,
   Share2,
+  UserIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -54,6 +55,8 @@ import "react-quill-new/dist/quill.bubble.css";
 import "react-quill-new/dist/quill.snow.css";
 import { toast } from "sonner";
 import { initPayloadData, SharePlatforms, TEditorTheme } from "./constants";
+import { TagInput } from "@/components/ui/TagInput";
+import { TagList } from "@/components/ui/TagList";
 import { cn } from "@/lib/utils";
 
 export const BlogEditor = ({
@@ -134,6 +137,7 @@ export const BlogEditor = ({
       title: formData.title,
       sub_title: formData.sub_title,
       content: formData.content,
+      tags: formData.tags ?? "",
       is_draft: isDraft,
     };
     if (!!formData.thumbnail_file)
@@ -454,6 +458,14 @@ export const BlogEditor = ({
                 />
               )}
             </div>
+            {isVisit ? (
+              <TagList tags={data?.tags} linked />
+            ) : (
+              <TagInput
+                value={formData.tags}
+                onChange={(value) => handleChange("tags", value)}
+              />
+            )}
             <div>
               {isVisit ? (
                 <div className="w-full ql-bubble">
@@ -478,12 +490,16 @@ export const BlogEditor = ({
                   onClick={() => push(`/profile/${data?.user_id}`)}
                 >
                   <div className="relative w-[30px] h-[30px]">
-                    <Image
-                      src={data?.user?.picture_url || ""}
-                      alt={data?.user?.name || ""}
-                      fill
-                      className="rounded-full"
-                    />
+                    {data?.user?.picture_url ? (
+                      <Image
+                        src={data.user.picture_url}
+                        alt={data.user.name || ""}
+                        fill
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <UserIcon width={30} height={30} />
+                    )}
                   </div>
 
                   <div className="flex flex-col">
