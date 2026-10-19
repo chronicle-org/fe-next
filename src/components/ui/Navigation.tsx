@@ -21,7 +21,6 @@ import { logUserOut, TLoginResponse } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { TApiErrorResponse } from "@/lib/api";
 import {
-  CheckCheck,
   GalleryThumbnailsIcon,
   Pencil,
   Settings,
@@ -153,11 +152,6 @@ const Navigation = () => {
     },
   });
 
-  const onMarkAsRead = (ids: number[]) => {
-    if (ids.length === 0) return;
-    markAsRead(ids);
-  };
-
   // Memoized so the pending timer survives re-renders; `markAsRead` from
   // useMutation is referentially stable.
   const onMarkAsReadWithDebounce = useMemo(
@@ -233,7 +227,6 @@ const Navigation = () => {
                   newNotificationsCount={newNotificationsCount}
                   onOpenNotifications={onOpenNotifications}
                   onAutoMarkAsRead={onMarkAsReadWithDebounce}
-                  onMarkAllAsRead={onMarkAsRead}
                   onDismiss={dismissNotification}
                   isFetching={isLoading}
                   movePage={fetchNextPage}
@@ -310,7 +303,6 @@ const DropdownNotifications = ({
   newNotificationsCount,
   onOpenNotifications,
   onAutoMarkAsRead,
-  onMarkAllAsRead,
   onDismiss,
   movePage,
   hasNextPage,
@@ -319,7 +311,6 @@ const DropdownNotifications = ({
   newNotificationsCount: number;
   onOpenNotifications: () => void;
   onAutoMarkAsRead: (ids: number[]) => void;
-  onMarkAllAsRead: (ids: number[]) => void;
   onDismiss: (id: number) => void;
   isFetching: boolean;
   movePage: () => void;
@@ -432,18 +423,7 @@ const DropdownNotifications = ({
         align="end"
         className="max-h-[300px] overflow-y-auto"
       >
-        <div className="flex items-center justify-between gap-2">
-          <DropdownMenuItem
-            className="p-2 w-fit text-sm"
-            disabled={unreadIds.length === 0}
-            onClick={(e) => {
-              e.preventDefault();
-              onMarkAllAsRead(unreadIds);
-            }}
-          >
-            <CheckCheck width={16} height={16} className="size-[16]" />
-            Mark all as read
-          </DropdownMenuItem>
+        <div className="flex items-center justify-end gap-2">
           <DropdownMenuItem
             className="flex justify-end p-2 w-fit [&_svg]:pointer-events-auto! group"
             onClick={() => push("/setting")}
