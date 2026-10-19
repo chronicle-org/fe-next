@@ -20,7 +20,7 @@ const initForm: TLoginPayload = {
   password: "",
 };
 
-const SignIn = () => {
+const SignIn = ({ signupEnabled }: { signupEnabled: boolean }) => {
   const { push } = useRouter();
   const [form, setForm] = useState<TLoginPayload>(initForm);
   const refreshUser = useStore(useUserStore, (s) => s.refreshUser);
@@ -82,12 +82,14 @@ const SignIn = () => {
           {isLoggingIn ? <Spinner /> : "Login"}
         </Button>
 
-        <p className="text-sm text-center text-muted-foreground">
-          New to Chronicle?{" "}
-          <Link href="/auth/register" className="text-foreground underline">
-            Sign up
-          </Link>
-        </p>
+        {signupEnabled && (
+          <p className="text-sm text-center text-muted-foreground">
+            New to Chronicle?{" "}
+            <Link href="/auth/register" className="text-foreground underline">
+              Sign up
+            </Link>
+          </p>
+        )}
       </form>
     </div>
   );
