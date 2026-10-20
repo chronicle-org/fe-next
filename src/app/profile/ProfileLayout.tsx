@@ -41,6 +41,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import UserCard from "@/components/ui/UserCard";
 import PostCard from "@/components/ui/PostCard";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMoreQuery } from "@/lib/hooks/useLoadMoreQuery";
 import {
   getNotificationSettings,
   TNotificationSettingsPayload,
@@ -112,60 +114,28 @@ const ProfileLayout = ({
       },
     });
 
-  const { data: followers, isFetching: isFetchingFollowers } = useQuery({
+  const followers = useLoadMoreQuery({
     enabled: tab === "followers",
     queryKey: ["followers", data.id],
-    queryFn: async () => {
-      try {
-        const res = await getFollowers(data.id);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
-    },
+    fetchPage: (params) => getFollowers(data.id, params),
   });
 
-  const { data: following, isFetching: isFetchingFollowing } = useQuery({
+  const following = useLoadMoreQuery({
     enabled: tab === "following",
     queryKey: ["following", data.id],
-    queryFn: async () => {
-      try {
-        const res = await getFollowing(data.id);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
-    },
+    fetchPage: (params) => getFollowing(data.id, params),
   });
 
-  const { data: bookmarks, isFetching: isFetchingBookmarks } = useQuery({
+  const bookmarks = useLoadMoreQuery({
     enabled: tab === "bookmarks",
     queryKey: ["bookmarks", data.id],
-    queryFn: async () => {
-      try {
-        const res = await getBookmarks(data.id);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
-    },
+    fetchPage: (params) => getBookmarks(data.id, params),
   });
 
-  const { data: likes, isFetching: isFetchingLikes } = useQuery({
+  const likes = useLoadMoreQuery({
     enabled: tab === "likes",
     queryKey: ["likes", data.id],
-    queryFn: async () => {
-      try {
-        const res = await getLikes(data.id);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
-    },
+    fetchPage: (params) => getLikes(data.id, params),
   });
 
   const { data: drafts, isFetching: isFetchingDrafts } = useQuery({
@@ -395,7 +365,7 @@ const ProfileLayout = ({
               </TabsContent>
               <TabsContent value="followers">
                 <div className="flex flex-wrap gap-2.5 mx-2.5">
-                  {isFetchingFollowers ? (
+                  {followers.isLoading ? (
                     Array(5)
                       .fill("")
                       .map((_, index) => {
@@ -408,20 +378,25 @@ const ProfileLayout = ({
                       })
                   ) : (
                     <>
-                      {!followers?.length ? (
+                      {!followers.items.length ? (
                         <div>No followers</div>
                       ) : (
-                        followers?.map((follower) => {
+                        followers.items.map((follower) => {
                           return <UserCard user={follower} key={follower.id} />;
                         })
                       )}
+                      <LoadMore
+                        hasMore={followers.hasNextPage}
+                        isLoading={followers.isFetchingNextPage}
+                        onClick={() => followers.fetchNextPage()}
+                      />
                     </>
                   )}
                 </div>
               </TabsContent>
               <TabsContent value="following">
                 <div className="flex flex-wrap gap-2.5 mx-2.5">
-                  {isFetchingFollowing ? (
+                  {following.isLoading ? (
                     Array(5)
                       .fill("")
                       .map((_, index) => {
@@ -434,22 +409,25 @@ const ProfileLayout = ({
                       })
                   ) : (
                     <>
-                      {!following?.length ? (
+                      {!following.items.length ? (
                         <div>No following</div>
                       ) : (
-                        following?.map((following) => {
-                          return (
-                            <UserCard user={following} key={following.id} />
-                          );
+                        following.items.map((user) => {
+                          return <UserCard user={user} key={user.id} />;
                         })
                       )}
+                      <LoadMore
+                        hasMore={following.hasNextPage}
+                        isLoading={following.isFetchingNextPage}
+                        onClick={() => following.fetchNextPage()}
+                      />
                     </>
                   )}
                 </div>
               </TabsContent>
               <TabsContent value="bookmarks">
                 <div className="flex flex-col gap-2.5 mx-2.5">
-                  {isFetchingBookmarks ? (
+                  {bookmarks.isLoading ? (
                     Array(5)
                       .fill("")
                       .map((_, index) => {
@@ -462,20 +440,25 @@ const ProfileLayout = ({
                       })
                   ) : (
                     <>
-                      {!bookmarks?.length ? (
+                      {!bookmarks.items.length ? (
                         <div>No bookmarks</div>
                       ) : (
-                        bookmarks?.map((bookmark) => {
+                        bookmarks.items.map((bookmark) => {
                           return <PostCard data={bookmark} key={bookmark.id} />;
                         })
                       )}
+                      <LoadMore
+                        hasMore={bookmarks.hasNextPage}
+                        isLoading={bookmarks.isFetchingNextPage}
+                        onClick={() => bookmarks.fetchNextPage()}
+                      />
                     </>
                   )}
                 </div>
               </TabsContent>
               <TabsContent value="likes">
                 <div className="flex flex-col gap-2.5 mx-2.5">
-                  {isFetchingLikes ? (
+                  {likes.isLoading ? (
                     Array(5)
                       .fill("")
                       .map((_, index) => {
@@ -488,13 +471,18 @@ const ProfileLayout = ({
                       })
                   ) : (
                     <>
-                      {!likes?.length ? (
+                      {!likes.items.length ? (
                         <div>No liked posts</div>
                       ) : (
-                        likes?.map((post) => {
+                        likes.items.map((post) => {
                           return <PostCard data={post} key={post.id} />;
                         })
                       )}
+                      <LoadMore
+                        hasMore={likes.hasNextPage}
+                        isLoading={likes.isFetchingNextPage}
+                        onClick={() => likes.fetchNextPage()}
+                      />
                     </>
                   )}
                 </div>

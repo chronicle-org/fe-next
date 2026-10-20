@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { TApiErrorResponse } from "@/lib/api";
 import { getAllByPostId, postComment } from "@/lib/api/comment";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useLoadMoreQuery } from "@/lib/hooks/useLoadMoreQuery";
+import { LoadMore } from "./LoadMore";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -26,18 +28,17 @@ export const CommentSection = ({
 }) => {
   const [comment, setComment] = useState("");
 
-  const { data: comments, refetch: refetchComments } = useQuery({
+  const {
+    items: comments,
+    total,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch: refetchComments,
+  } = useLoadMoreQuery({
     enabled: !!postId,
     queryKey: [`post-${postId}-comments`],
-    queryFn: async () => {
-      try {
-        const res = await getAllByPostId(postId as number);
-        return res.data.content;
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
-      }
-    },
+    fetchPage: (params) => getAllByPostId(postId as number, params),
   });
 
   const { mutate: post, isPending: isPosting } = useMutation({
@@ -59,7 +60,7 @@ export const CommentSection = ({
 
   return (
     <div className="flex flex-col gap-10 w-full max-w-[800px] mx-auto">
-      <div className="text-end">{comments?.length || 0} Comments</div>
+      <div className="text-end">{total} Comments</div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <Textarea
           placeholder="Write your comment here..."
@@ -78,7 +79,7 @@ export const CommentSection = ({
           {isPosting && <Spinner />}
         </Button>
       </form>
-      {!comments || !comments.length ? (
+      {!comments.length ? (
         <div className="w-full flex flex-col gap-5 text-muted-foreground items-center">
           <p>No comment found</p>
           <CommentIcon width={100} height={100} />
@@ -130,6 +131,11 @@ export const CommentSection = ({
           );
         })
       )}
+      <LoadMore
+        hasMore={hasNextPage}
+        isLoading={isFetchingNextPage}
+        onClick={() => fetchNextPage()}
+      />
     </div>
   );
 };
