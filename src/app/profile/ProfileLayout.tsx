@@ -68,6 +68,8 @@ const ProfileLayout = ({
   const [tab, setTab] = useState("posts");
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
+  // Profiles can be visited logged out, where there are no settings to load.
+  const currentUser = useStore(useUserStore, (s) => s.user);
 
   const { getParam, setParam, removeParam } = useUpdateParam();
 
@@ -161,6 +163,7 @@ const ProfileLayout = ({
     isFetching: isFetchingNotificationSettings,
     refetch: refetchNotificationSettings,
   } = useQuery({
+    enabled: !!currentUser,
     queryKey: ["notifications-settings"],
     queryFn: async () => {
       const res = await getNotificationSettings();
@@ -332,7 +335,7 @@ const ProfileLayout = ({
                 )}
               </TabsList>
               <TabsContent value="posts">
-                {isVisit && (
+                {isVisit && currentUser && (
                   <div className="flex items-center space-x-2 w-full justify-end mb-4">
                     <Switch
                       className="cursor-pointer"

@@ -4,7 +4,12 @@ import { getCookie } from "./lib/utils";
 
 const authRoutes = ["/auth"];
 
-const protectedRoutes = ["/dashboard", "/profile", "/setting"];
+const protectedRoutes = ["/dashboard", "/setting"];
+
+// Your own profile needs a login; other people's (/profile/:id) are public.
+const isProtected = (pathname: string) =>
+  pathname === "/profile" ||
+  protectedRoutes.some((path) => pathname.startsWith(path));
 
 export function proxy(req: NextRequest) {
   const cookie = getCookie(req)
@@ -14,7 +19,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (!cookie && protectedRoutes.some((path) => pathname.startsWith(path))) {
+  if (!cookie && isProtected(pathname)) {
     return NextResponse.redirect(new URL("/auth", req.url));
   }
 
