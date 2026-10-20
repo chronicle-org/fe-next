@@ -15,9 +15,10 @@ import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/dist/client/components/navigation";
 import { JSX, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ChangePassword } from "./ChangePassword";
 import { useStore } from "zustand";
 
-const menus = ["notification"];
+const menus = ["notification", "password"];
 
 const Setting = () => {
   const [activeMenu, setActiveMenu] =
@@ -29,7 +30,7 @@ const Setting = () => {
   useEffect(() => {
     setMounted(true);
     if (!user) {
-      push("/login");
+      push("/auth");
     }
   }, [user, push]);
 
@@ -38,6 +39,8 @@ const Setting = () => {
     switch (activeMenu) {
       case "notification":
         return <Notification data={user} />;
+      case "password":
+        return <ChangePassword />;
       default:
         return "Notification";
     }

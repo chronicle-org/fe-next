@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { FancyInput } from "@/components/ui/InputFancy";
 import { Spinner } from "@/components/ui/spinner";
-import { TApiErrorResponse } from "@/lib/api";
+import { getApiErrorMessage, TApiErrorResponse } from "@/lib/api";
 import { logUserIn, registerUser, TRegisterPayload } from "@/lib/api/auth";
 import { useUserStore } from "@/lib/stores/user.store";
 import { cn, setCookie } from "@/lib/utils";
@@ -27,13 +27,6 @@ const initForm: TRegisterPayload & { confirmPassword: string } = {
   confirmPassword: "",
 };
 
-// Validation errors come back as a list; other errors as one string.
-const errorMessage = (err: TApiErrorResponse): string => {
-  const message = err.response?.data.message as string | string[] | undefined;
-  if (Array.isArray(message)) return message.join(", ");
-  return message || "Could not create your account";
-};
-
 const SignUp = () => {
   const { push } = useRouter();
   const [form, setForm] = useState(initForm);
@@ -52,7 +45,8 @@ const SignUp = () => {
       refreshUser();
       push("/dashboard");
     },
-    onError: (err: TApiErrorResponse) => toast.error(errorMessage(err)),
+    onError: (err: TApiErrorResponse) =>
+      toast.error(getApiErrorMessage(err, "Could not create your account")),
   });
 
   const passwordsMatch =

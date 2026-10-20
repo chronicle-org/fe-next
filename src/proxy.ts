@@ -4,7 +4,7 @@ import { getCookie } from "./lib/utils";
 
 const authRoutes = ["/auth"];
 
-const protectedRoutes = ["/dashboard", "/profile", "/settings"];
+const protectedRoutes = ["/dashboard", "/profile", "/setting"];
 
 export function proxy(req: NextRequest) {
   const cookie = getCookie(req)
