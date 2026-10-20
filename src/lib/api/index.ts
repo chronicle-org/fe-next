@@ -44,6 +44,16 @@ export type TApiResponsePagination<T = unknown> = Omit<
 
 export type TApiErrorResponse = AxiosError<TApiResponse>;
 
+// Validation errors come back as a list; other errors as one string.
+export const getApiErrorMessage = (
+  err: TApiErrorResponse,
+  fallback: string
+): string => {
+  const message = err.response?.data.message as string | string[] | undefined;
+  if (Array.isArray(message)) return message.join(", ");
+  return message || fallback;
+};
+
 export function getMethod<TData>(
   endpoint: string,
   config?: AxiosRequestConfig

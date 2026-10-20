@@ -1,4 +1,4 @@
-import { postMethod, TApiResponse } from ".";
+import { postMethod, putMethod, TApiResponse } from ".";
 
 export type TLoginPayload = {
   email: string;
@@ -49,5 +49,17 @@ export const registerUser = (payload: TRegisterPayload) => {
 export const logUserOut = () => {
   return postMethod<TLoginPayload, TApiResponse<TLoginResponse>>(
     `${baseUrl}/logout`
+  );
+};
+
+export type TChangePasswordPayload = {
+  current_password: string;
+  new_password: string;
+};
+
+export const changePassword = (payload: TChangePasswordPayload) => {
+  return putMethod<TChangePasswordPayload, TApiResponse<{ message: string }>>(
+    `${baseUrl}/password`,
+    payload
   );
 };

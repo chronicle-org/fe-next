@@ -1,4 +1,11 @@
-import { getMethod, postMethod, putMethod, TApiResponse } from ".";
+import {
+  getMethod,
+  postMethod,
+  putMethod,
+  TApiResponse,
+  TApiResponsePagination,
+  TPaginationParam,
+} from ".";
 import { TLoginResponse } from "./auth";
 import { TPost } from "./post";
 
@@ -24,8 +31,10 @@ export const updateProfile = (payload: TUpdatePayload) => {
   );
 };
 
-export const getAllUsers = () => {
-  return getMethod<TApiResponse<TResponseUser[]>>(baseUrl);
+export const getAllUsers = (params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TResponseUser[]>>(baseUrl, {
+    params,
+  });
 };
 
 export type TFollowingAction = "follow" | "unfollow";
@@ -38,22 +47,30 @@ export const toggleFollowUser = async (
   );
 };
 
-export const getFollowing = async (userId: number) => {
-  return getMethod<TApiResponse<TLoginResponse[]>>(
-    `${baseUrl}/following/${userId}`
+export const getFollowing = async (userId: number, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TLoginResponse[]>>(
+    `${baseUrl}/following/${userId}`,
+    { params }
   );
 };
 
-export const getFollowers = async (userId: number) => {
-  return getMethod<TApiResponse<TLoginResponse[]>>(
-    `${baseUrl}/followers/${userId}`
+export const getFollowers = async (userId: number, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TLoginResponse[]>>(
+    `${baseUrl}/followers/${userId}`,
+    { params }
   );
 };
 
-export const getLikes = async (userId: number) => {
-  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/likes/${userId}`);
+export const getLikes = async (userId: number, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TPost[]>>(
+    `${baseUrl}/likes/${userId}`,
+    { params }
+  );
 };
 
-export const getBookmarks = async (userId: number) => {
-  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/bookmarks/${userId}`);
+export const getBookmarks = async (userId: number, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TPost[]>>(
+    `${baseUrl}/bookmarks/${userId}`,
+    { params }
+  );
 };

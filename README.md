@@ -25,3 +25,7 @@ Chronicle Web is the primary writing experience in the Chronicle ecosystem. It d
 - **Auth & DB:** Supabase  
 - **API:** Chronicle Backend (NestJS)  
 - **Deployment:** Vercel / Cloud Run
+
+## 🧪 Browser tests
+
+`npm run test:e2e` builds the app, starts it on port 3100 and runs the Playwright tests in `e2e/` (login, sign-up, writing a post, comments). Every API call is mocked in the browser, so no backend is needed. Run `npx playwright install chromium` once first. CI runs them on every PR.

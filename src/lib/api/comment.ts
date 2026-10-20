@@ -1,4 +1,11 @@
-import { deleteMethod, getMethod, postMethod, TApiResponse } from ".";
+import {
+  deleteMethod,
+  getMethod,
+  postMethod,
+  TApiResponse,
+  TApiResponsePagination,
+  TPaginationParam,
+} from ".";
 import { TLoginResponse } from "./auth";
 
 const baseUrl = "/comment";
@@ -13,8 +20,11 @@ export type TComment = {
   updated_at: Date;
 };
 
-export const getAllByPostId = (postId: number) => {
-  return getMethod<TApiResponse<TComment[]>>(`${baseUrl}/post/${postId}`);
+export const getAllByPostId = (postId: number, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TComment[]>>(
+    `${baseUrl}/post/${postId}`,
+    { params }
+  );
 };
 
 export const postComment = (

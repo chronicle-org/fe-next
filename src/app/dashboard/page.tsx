@@ -15,8 +15,8 @@ const Dashboard = () => {
     queryKey: ["users"],
     queryFn: async () => {
       try {
-        const res = await getAllUsers();
-        return res.data.content;
+        const res = await getAllUsers({ page: 1, limit: 20 });
+        return res.data.content?.data;
       } catch (error) {
         const err = error as TApiErrorResponse;
         toast.error(err.response?.data.error);

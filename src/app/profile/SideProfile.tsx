@@ -131,14 +131,17 @@ export const SideProfile = ({
               <div className="text-sm text-muted-foreground wrap-anywhere break-all line-clamp-1">
                 @{data.handle}
               </div>
-              <div className="flex items-center gap-1">
-                <Link
-                  href={`mailto:${data.email}`}
-                  className="text-sm text-blue-500 wrap-anywhere break-all line-clamp-1"
-                >
-                  {data.email}
-                </Link>
-              </div>
+              {/* The API leaves the email out for logged-out visitors. */}
+              {data.email && (
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={`mailto:${data.email}`}
+                    className="text-sm text-blue-500 wrap-anywhere break-all line-clamp-1"
+                  >
+                    {data.email}
+                  </Link>
+                </div>
+              )}
             </div>
             <div className="wrap-anywhere break-all line-clamp-1">
               {data.profile_description}
