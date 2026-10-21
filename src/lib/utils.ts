@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/id";
 import { NextRequest } from "next/server";
 import { twMerge } from "tailwind-merge";
+import type { TLoginResponse } from "./api/auth";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,6 +35,17 @@ export function getCookie(serverRequest?: NextRequest): string | null {
     if (key === `${localCookieName}`) return decodeURIComponent(value);
   }
   return null;
+}
+
+/**
+ * Saves the logged-in user for the UI. The login token is left out: the API
+ * already keeps it in an httpOnly cookie, and this cookie is readable by any
+ * script on the page.
+ */
+export function setUserCookie(user: Partial<TLoginResponse>): void {
+  const stored = { ...user };
+  delete stored.access_token;
+  setCookie(JSON.stringify(stored));
 }
 
 export function deleteCookie(): void {

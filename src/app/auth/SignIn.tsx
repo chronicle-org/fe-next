@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
-import { cn, setCookie } from "@/lib/utils";
+import { cn, setUserCookie } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/user.store";
 import { useStore } from "zustand";
@@ -29,8 +29,7 @@ const SignIn = ({ signupEnabled }: { signupEnabled: boolean }) => {
     mutationFn: () => logUserIn(form),
     onSuccess: async (res) => {
       toast.success("Successfully logged in");
-      const parsedCookie = JSON.stringify(res.data.content);
-      await setCookie(parsedCookie);
+      setUserCookie(res.data.content ?? {});
       refreshUser();
       push("/dashboard");
     },

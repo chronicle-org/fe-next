@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { TLoginResponse } from "@/lib/api/auth";
-import { cn, getCookie, setCookie } from "@/lib/utils";
+import { cn, getCookie, setUserCookie } from "@/lib/utils";
 import { useUpdateParam } from "@/lib/utils-client";
 import Image from "next/image";
 import { useState } from "react";
@@ -105,8 +105,8 @@ const ProfileLayout = ({
         const currentCookie: TLoginResponse = JSON.parse(cookie || "{}");
         const newUserData = { ...currentCookie, ...res.data.content };
         setUser(newUserData);
-        const parsedCookie = JSON.stringify(newUserData);
-        await setCookie(parsedCookie);
+        // Also drops a token left in cookies saved before it was excluded.
+        setUserCookie(newUserData);
         toast.success("Profile updated");
         onRefetchUser();
       },

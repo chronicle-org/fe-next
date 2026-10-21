@@ -13,7 +13,8 @@ export type TLoginResponse = {
   picture_url?: string;
   banner_url?: string;
   handle: string;
-  access_token: string;
+  // In the login response only; never stored in the readable user cookie.
+  access_token?: string;
   profile_description?: string;
   tags?: string;
   following?: number[];

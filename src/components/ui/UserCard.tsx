@@ -9,7 +9,7 @@ import Link from "next/link";
 const UserCard = ({
   user,
 }: {
-  user: Omit<TLoginResponse, "acccess_token">;
+  user: Omit<TLoginResponse, "access_token">;
 }) => {
   return (
     <Link href={`/profile/${user.id}`}>
