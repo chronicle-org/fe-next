@@ -9,7 +9,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { cn, setCookie } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/user.store";
@@ -35,7 +35,7 @@ const SignIn = ({ signupEnabled }: { signupEnabled: boolean }) => {
       push("/dashboard");
     },
     onError: (res: TApiErrorResponse) => {
-      toast.error(res.response?.data.message);
+      toast.error(getApiErrorMessage(res));
     },
   });
 

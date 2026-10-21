@@ -5,7 +5,7 @@ import { UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { getAllByPostId, postComment } from "@/lib/api/comment";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
@@ -50,7 +50,7 @@ export const CommentSection = ({
       refetchComments();
     },
     onError: (error: TApiErrorResponse) => {
-      toast.error(error.response?.data.error);
+      toast.error(getApiErrorMessage(error));
     },
   });
 

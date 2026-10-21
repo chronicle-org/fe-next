@@ -21,7 +21,7 @@ import ImageUploader from "@/components/ui/UploadImage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { uploadFile } from "@/lib/api/file";
 import { toast } from "sonner";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
   getBookmarks,
   getFollowers,
@@ -87,7 +87,7 @@ const ProfileLayout = ({
       } catch (error) {
         setEdit({ status: false });
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error || "Post not found");
+        toast.error(getApiErrorMessage(err, "Post not found"));
       }
     },
   });
@@ -112,7 +112,7 @@ const ProfileLayout = ({
       },
       onError: (error) => {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       },
     });
 
@@ -153,7 +153,7 @@ const ProfileLayout = ({
         return res.data.content?.data || [];
       } catch (error) {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       }
     },
   });
@@ -200,7 +200,7 @@ const ProfileLayout = ({
         },
         onError: (error) => {
           const err = error as TApiErrorResponse;
-          toast.error(err.response?.data.error);
+          toast.error(getApiErrorMessage(err));
         },
       },
     );
@@ -226,7 +226,7 @@ const ProfileLayout = ({
                       },
                       onError: (error) => {
                         const err = error as TApiErrorResponse;
-                        toast.error(err.response?.data.error);
+                        toast.error(getApiErrorMessage(err));
                       },
                     },
                   );
@@ -267,7 +267,7 @@ const ProfileLayout = ({
                   },
                   onError: (error) => {
                     const err = error as TApiErrorResponse;
-                    toast.error(err.response?.data.error);
+                    toast.error(getApiErrorMessage(err));
                   },
                 },
               );

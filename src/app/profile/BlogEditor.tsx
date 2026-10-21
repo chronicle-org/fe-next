@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { CommentSection } from "@/components/ui/CommentSection";
 import { Modal } from "@/components/ui/Modal";
 import ImageUploader from "@/components/ui/UploadImage";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { TLoginResponse } from "@/lib/api/auth";
 import { deleteComment } from "@/lib/api/comment";
 import { uploadFile } from "@/lib/api/file";
@@ -106,7 +106,7 @@ export const BlogEditor = ({
     mutationFn: (data: TAddPostPayload) => addPost(data),
     onSuccess: () => onBack?.(),
     onError: (err: TApiErrorResponse) => {
-      toast.error(err.response?.data.error);
+      toast.error(getApiErrorMessage(err));
     },
   });
 
@@ -115,7 +115,7 @@ export const BlogEditor = ({
       editPost(payload.id, payload.data),
     onSuccess: () => onBack?.(),
     onError: (err: TApiErrorResponse) => {
-      toast.error(err.response?.data.error);
+      toast.error(getApiErrorMessage(err));
     },
   });
 
@@ -127,7 +127,7 @@ export const BlogEditor = ({
         onBack?.();
       },
       onError: (err: TApiErrorResponse) => {
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       },
     });
 
@@ -154,7 +154,7 @@ export const BlogEditor = ({
           },
           onError: (error) => {
             const err = error as TApiErrorResponse;
-            toast.error(err.response?.data.error);
+            toast.error(getApiErrorMessage(err));
           },
         },
       );
@@ -225,7 +225,7 @@ export const BlogEditor = ({
               interaction.charAt(0).toUpperCase() + interaction.slice(1);
             return `${text}${text[text.length - 1] === "e" ? "d" : "ed"}`;
           },
-          error: (err) => err.response?.data.message,
+          error: (err) => getApiErrorMessage(err),
         });
         return apiCallPromise;
       }
