@@ -20,6 +20,36 @@ test("logs in and lands on the dashboard", async ({ page }) => {
   await page.getByLabel("Password").fill("secret123");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
+
+  // The readable user cookie keeps the profile but never the login token.
+  const cookies = await page.context().cookies();
+  const stored = cookies.find((c) => c.name === "chronicle_access_token_local");
+  const user = JSON.parse(decodeURIComponent(stored!.value));
+  expect(user.email).toBe(testUser.email);
+  expect(user).not.toHaveProperty("access_token");
+});
+
+test("shows the API's message, not the status label, in error toasts", async ({
+  page,
+}) => {
+  await mockApi(page, {
+    "POST /auth/login": (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({
+          statusCode: 400,
+          message: ["Invalid email format"],
+          error: "Bad Request",
+        }),
+      }),
+  });
+  await page.goto("/auth");
+  await page.getByLabel("Email").fill("someone@example.com");
+  await page.getByLabel("Password").fill("secret123");
+  await page.getByRole("button", { name: "Login" }).click();
+  await expect(page.getByText("Invalid email format")).toBeVisible();
+  await expect(page.getByText("Bad Request")).toHaveCount(0);
 });
 
 test("signs up, logs in and lands on the dashboard", async ({ page }) => {

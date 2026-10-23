@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { TLoginResponse } from "@/lib/api/auth";
 import {
   getNotificationSettings,
@@ -210,7 +210,7 @@ const Notification = ({ data }: { data: TLoginResponse }) => {
         onError: (error) => {
           toast.dismiss();
           const err = error as TApiErrorResponse;
-          toast.error(err.response?.data.error);
+          toast.error(getApiErrorMessage(err));
           setValues((prev) => ({
             ...prev,
             [key]: !checked,

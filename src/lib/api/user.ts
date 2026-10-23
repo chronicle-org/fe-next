@@ -11,7 +11,7 @@ import { TPost } from "./post";
 
 const baseUrl = "/user";
 
-export type TResponseUser = Omit<TLoginResponse, "acccess_token">;
+export type TResponseUser = Omit<TLoginResponse, "access_token">;
 
 export const getUserProfile = (id: number) => {
   return getMethod<TApiResponse<TResponseUser>>(`${baseUrl}/${id}`);

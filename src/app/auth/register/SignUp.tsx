@@ -6,7 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { getApiErrorMessage, TApiErrorResponse } from "@/lib/api";
 import { logUserIn, registerUser, TRegisterPayload } from "@/lib/api/auth";
 import { useUserStore } from "@/lib/stores/user.store";
-import { cn, setCookie } from "@/lib/utils";
+import { cn, setUserCookie } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,7 +41,7 @@ const SignUp = () => {
     },
     onSuccess: async (res) => {
       toast.success("Welcome to Chronicle!");
-      await setCookie(JSON.stringify(res.data.content));
+      setUserCookie(res.data.content ?? {});
       refreshUser();
       push("/dashboard");
     },

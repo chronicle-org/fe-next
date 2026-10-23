@@ -2,7 +2,7 @@
 
 import { BlogEditor } from "@/app/profile/BlogEditor";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { findOne, TPost } from "@/lib/api/post";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -31,7 +31,7 @@ export const PostLayout = ({
         return res.data.content;
       } catch (error) {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
         push("/dashboard");
       }
     },

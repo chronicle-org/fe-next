@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { FancyInput } from "@/components/ui/InputFancy";
 import { Spinner } from "@/components/ui/spinner";
 import ImageUploader from "@/components/ui/UploadImage";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
   TFollowingAction,
   toggleFollowUser,
@@ -51,7 +51,7 @@ export const SideProfile = ({
     },
     onError: (error) => {
       const err = error as TApiErrorResponse;
-      toast.error(err.response?.data.message);
+      toast.error(getApiErrorMessage(err));
     },
   });
 

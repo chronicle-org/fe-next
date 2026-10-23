@@ -5,6 +5,7 @@ import {
   TApiErrorResponse,
   TApiResponsePagination,
   TPaginationParam,
+  getApiErrorMessage,
 } from "../api";
 
 export const LOAD_MORE_LIMIT = 20;
@@ -39,7 +40,7 @@ export function useLoadMoreQuery<TItem>({
         };
       } catch (error) {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
         throw error;
       }
     },

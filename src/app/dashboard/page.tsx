@@ -3,7 +3,7 @@
 import PostCard from "@/components/ui/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import UserCard from "@/components/ui/UserCard";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { getAllPosts } from "@/lib/api/post";
 import { getAllUsers } from "@/lib/api/user";
 import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
@@ -19,7 +19,7 @@ const Dashboard = () => {
         return res.data.content?.data;
       } catch (error) {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       }
     },
   });
@@ -39,7 +39,7 @@ const Dashboard = () => {
       search: "",
     },
     onError: (error) => {
-      toast.error(error.response?.data.error);
+      toast.error(getApiErrorMessage(error));
     },
   });
 

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import PostCard from "@/components/ui/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { TLoginResponse } from "@/lib/api/auth";
 import { deletePost, getAllPostsByUser, TPost } from "@/lib/api/post";
 import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
@@ -44,7 +44,7 @@ export const PostContainer = ({
       search: "",
     },
     onError: (error) => {
-      toast.error(error.response?.data.error);
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -56,7 +56,7 @@ export const PostContainer = ({
       refetch();
     },
     onError: (error: TApiErrorResponse) => {
-      toast.error(error.response?.data.error);
+      toast.error(getApiErrorMessage(error));
     },
   });
 

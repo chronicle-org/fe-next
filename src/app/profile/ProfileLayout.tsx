@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { TLoginResponse } from "@/lib/api/auth";
-import { cn, getCookie, setCookie } from "@/lib/utils";
+import { cn, getCookie, setUserCookie } from "@/lib/utils";
 import { useUpdateParam } from "@/lib/utils-client";
 import Image from "next/image";
 import { useState } from "react";
@@ -21,7 +21,7 @@ import ImageUploader from "@/components/ui/UploadImage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { uploadFile } from "@/lib/api/file";
 import { toast } from "sonner";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
   getBookmarks,
   getFollowers,
@@ -87,7 +87,7 @@ const ProfileLayout = ({
       } catch (error) {
         setEdit({ status: false });
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error || "Post not found");
+        toast.error(getApiErrorMessage(err, "Post not found"));
       }
     },
   });
@@ -105,14 +105,14 @@ const ProfileLayout = ({
         const currentCookie: TLoginResponse = JSON.parse(cookie || "{}");
         const newUserData = { ...currentCookie, ...res.data.content };
         setUser(newUserData);
-        const parsedCookie = JSON.stringify(newUserData);
-        await setCookie(parsedCookie);
+        // Also drops a token left in cookies saved before it was excluded.
+        setUserCookie(newUserData);
         toast.success("Profile updated");
         onRefetchUser();
       },
       onError: (error) => {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       },
     });
 
@@ -153,7 +153,7 @@ const ProfileLayout = ({
         return res.data.content?.data || [];
       } catch (error) {
         const err = error as TApiErrorResponse;
-        toast.error(err.response?.data.error);
+        toast.error(getApiErrorMessage(err));
       }
     },
   });
@@ -200,7 +200,7 @@ const ProfileLayout = ({
         },
         onError: (error) => {
           const err = error as TApiErrorResponse;
-          toast.error(err.response?.data.error);
+          toast.error(getApiErrorMessage(err));
         },
       },
     );
@@ -226,7 +226,7 @@ const ProfileLayout = ({
                       },
                       onError: (error) => {
                         const err = error as TApiErrorResponse;
-                        toast.error(err.response?.data.error);
+                        toast.error(getApiErrorMessage(err));
                       },
                     },
                   );
@@ -267,7 +267,7 @@ const ProfileLayout = ({
                   },
                   onError: (error) => {
                     const err = error as TApiErrorResponse;
-                    toast.error(err.response?.data.error);
+                    toast.error(getApiErrorMessage(err));
                   },
                 },
               );

@@ -19,7 +19,7 @@ import {
 import { cn, debounce, deleteCookie } from "@/lib/utils";
 import { logUserOut, TLoginResponse } from "@/lib/api/auth";
 import { toast } from "sonner";
-import { TApiErrorResponse } from "@/lib/api";
+import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
   GalleryThumbnailsIcon,
   Pencil,
@@ -132,7 +132,7 @@ const Navigation = () => {
     },
     onError: (err: TApiErrorResponse) => {
       toast.error(
-        err.response?.data.message || "Failed to mark notifications as read",
+        getApiErrorMessage(err, "Failed to mark notifications as read"),
       );
     },
   });
@@ -147,7 +147,7 @@ const Navigation = () => {
     onError: (err: TApiErrorResponse, _id, context) => {
       if (context?.previous) setNotifications(context.previous);
       toast.error(
-        err.response?.data.message || "Failed to dismiss notification",
+        getApiErrorMessage(err, "Failed to dismiss notification"),
       );
     },
   });
@@ -262,7 +262,7 @@ const DropdownNavMenu = ({ user }: { user: TLoginResponse | null }) => {
         // Disconnect socket and clear user even on logout API failure
         await deleteCookie();
         setUser(null);
-        return err.response?.data.message;
+        return getApiErrorMessage(err);
       },
     });
   };

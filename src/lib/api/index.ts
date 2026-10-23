@@ -44,10 +44,12 @@ export type TApiResponsePagination<T = unknown> = Omit<
 
 export type TApiErrorResponse = AxiosError<TApiResponse>;
 
-// Validation errors come back as a list; other errors as one string.
+// The API's message for a failed request. Nest puts the human-readable text
+// in `message` (a list for validation errors); `error` is only the status
+// label, such as "Bad Request".
 export const getApiErrorMessage = (
   err: TApiErrorResponse,
-  fallback: string
+  fallback = "Something went wrong"
 ): string => {
   const message = err.response?.data.message as string | string[] | undefined;
   if (Array.isArray(message)) return message.join(", ");
