@@ -79,3 +79,39 @@ test("posts a comment and loads more comments", async ({ page }) => {
   await expect(page.getByText("Comment posted")).toBeVisible();
   expect(posted).toEqual({ post_id: 5, content: "Nice one" });
 });
+
+test("loads drafts a page at a time", async ({ page }) => {
+  const draft = (id: number) => ({
+    id,
+    user_id: testUser.id,
+    title: `<p>Draft ${id}</p>`,
+    sub_title: "",
+    content: "<p>Unfinished</p>",
+    tags: "",
+    is_draft: true,
+    likes: [],
+    bookmarks: [],
+    user: testUser,
+  });
+  await logIn(page);
+  await mockApi(page, {
+    [`GET /user/${testUser.id}`]: (route) => route.fulfill(ok(testUser)),
+    "GET /notifications/settings": (route) =>
+      route.fulfill(ok({ notify_followed_posts_from_users: [] })),
+    [`GET /post/user/${testUser.id}/drafts`]: (route) => {
+      const pageNumber = Number(
+        new URL(route.request().url()).searchParams.get("page"),
+      );
+      // 25 drafts: a full first page of 20, then 5 more.
+      const ids = pageNumber === 1 ? [...Array(20).keys()] : [20, 21, 22, 23, 24];
+      return route.fulfill(ok({ data: ids.map((i) => draft(25 - i)), total: 25 }));
+    },
+  });
+
+  await page.goto("/profile");
+  await page.getByRole("tab", { name: "Drafts" }).click();
+  await expect(page.getByText(/^Draft \d+$/)).toHaveCount(20);
+  await page.getByRole("button", { name: "Load more" }).click();
+  await expect(page.getByText(/^Draft \d+$/)).toHaveCount(25);
+  await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0);
+});
