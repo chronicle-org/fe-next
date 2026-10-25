@@ -140,22 +140,10 @@ const ProfileLayout = ({
     fetchPage: (params) => getLikes(data.id, params),
   });
 
-  const { data: drafts, isFetching: isFetchingDrafts } = useQuery({
+  const drafts = useLoadMoreQuery({
     enabled: tab === "drafts" && !isVisit,
     queryKey: ["drafts", data.id],
-    queryFn: async () => {
-      try {
-        const res = await getDrafts(data.id, {
-          page: 1,
-          limit: 50,
-          search: "",
-        });
-        return res.data.content?.data || [];
-      } catch (error) {
-        const err = error as TApiErrorResponse;
-        toast.error(getApiErrorMessage(err));
-      }
-    },
+    fetchPage: (params) => getDrafts(data.id, { ...params, search: "" }),
   });
 
   const {
@@ -492,7 +480,7 @@ const ProfileLayout = ({
               </TabsContent>
               <TabsContent value="drafts">
                 <div className="flex flex-col gap-2.5 mx-2.5">
-                  {isFetchingDrafts ? (
+                  {drafts.isLoading ? (
                     Array(5)
                       .fill("")
                       .map((_, index) => {
@@ -505,10 +493,10 @@ const ProfileLayout = ({
                       })
                   ) : (
                     <>
-                      {!drafts?.length ? (
+                      {!drafts.items.length ? (
                         <div>No drafts</div>
                       ) : (
-                        drafts?.map((draft) => {
+                        drafts.items.map((draft) => {
                           return (
                             <PostCard
                               data={draft}
@@ -525,6 +513,11 @@ const ProfileLayout = ({
                           );
                         })
                       )}
+                      <LoadMore
+                        hasMore={drafts.hasNextPage}
+                        isLoading={drafts.isFetchingNextPage}
+                        onClick={() => drafts.fetchNextPage()}
+                      />
                     </>
                   )}
                 </div>
