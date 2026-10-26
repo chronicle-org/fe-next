@@ -16,9 +16,10 @@ import { useRouter } from "next/dist/client/components/navigation";
 import { JSX, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ChangePassword } from "./ChangePassword";
+import { DeleteAccount } from "./DeleteAccount";
 import { useStore } from "zustand";
 
-const menus = ["notification", "password"];
+const menus = ["notification", "password", "delete account"];
 
 const Setting = () => {
   const [activeMenu, setActiveMenu] =
@@ -41,6 +42,8 @@ const Setting = () => {
         return <Notification data={user} />;
       case "password":
         return <ChangePassword />;
+      case "delete account":
+        return <DeleteAccount />;
       default:
         return "Notification";
     }

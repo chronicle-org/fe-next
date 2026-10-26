@@ -2,6 +2,7 @@ import {
   getMethod,
   postMethod,
   putMethod,
+  TApiErrorResponse,
   TApiResponse,
   TApiResponsePagination,
   TPaginationParam,
@@ -35,6 +36,25 @@ export const getAllUsers = (params: TPaginationParam) => {
   return getMethod<TApiResponsePagination<TResponseUser[]>>(baseUrl, {
     params,
   });
+};
+
+// People followed by the people you follow first, then the most followed.
+// Falls back to the plain user list while the API doesn't have suggestions
+// yet; that list can include you and people you already follow.
+export const getSuggestedUsers = async (
+  limit: number,
+): Promise<TResponseUser[]> => {
+  try {
+    const res = await getMethod<TApiResponse<TResponseUser[]>>(
+      `${baseUrl}/suggestions`,
+      { params: { limit } },
+    );
+    return res.data.content ?? [];
+  } catch (error) {
+    if ((error as TApiErrorResponse).response?.status !== 404) throw error;
+    const res = await getAllUsers({ page: 1, limit });
+    return res.data.content?.data ?? [];
+  }
 };
 
 export type TFollowingAction = "follow" | "unfollow";

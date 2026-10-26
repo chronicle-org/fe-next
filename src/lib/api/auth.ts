@@ -1,4 +1,4 @@
-import { postMethod, putMethod, TApiResponse } from ".";
+import { deleteMethod, postMethod, putMethod, TApiResponse } from ".";
 
 export type TLoginPayload = {
   email: string;
@@ -63,4 +63,10 @@ export const changePassword = (payload: TChangePasswordPayload) => {
     `${baseUrl}/password`,
     payload
   );
+};
+
+export const deleteAccount = (password: string) => {
+  return deleteMethod<TApiResponse<{ message: string }>>(`${baseUrl}/account`, {
+    data: { password },
+  });
 };
