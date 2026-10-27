@@ -47,9 +47,11 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="flex flex-col w-[80vw] max-w-[800px] mx-auto py-5 gap-10">
+    <div className="flex flex-col w-full max-w-3xl mx-auto px-5 sm:px-8 py-10 gap-10">
       <div className="flex flex-col gap-2.5">
-        <div>Follow</div>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Who to follow
+        </h2>
         <div className="flex gap-2.5 overflow-hidden overflow-x-auto">
           {users && !users.length ? (
             <div className="text-sm text-muted-foreground">
@@ -72,8 +74,10 @@ const Dashboard = () => {
         </div>
       </div>
       <div className="flex flex-col gap-2.5">
-        <div>Posts</div>
-        <div className="flex flex-col gap-2.5 overflow-hidden">
+        <h2 className="font-serif text-2xl font-semibold border-b border-border pb-3">
+          Latest stories
+        </h2>
+        <div className="flex flex-col gap-4">
           {isLoading
             ? Array(5)
                 .fill("")

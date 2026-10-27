@@ -43,9 +43,11 @@ const Search = () => {
     ?.map((response) => response.data.content?.data)
     .flat();
   return (
-    <div className="flex flex-col gap-2.5 p-5 md:max-w-[800px] w-full mx-auto">
-      <p>Result</p>
-      <div className="flex flex-col gap-2.5 overflow-hidden w-full">
+    <div className="flex flex-col gap-5 px-5 sm:px-8 py-10 max-w-3xl w-full mx-auto">
+      <h1 className="font-serif text-2xl font-semibold border-b border-border pb-3">
+        Results
+      </h1>
+      <div className="flex flex-col gap-4 w-full">
         {isLoading
           ? Array(5)
               .fill("")
