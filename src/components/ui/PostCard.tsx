@@ -9,7 +9,7 @@ import HTMLReactParser from "html-react-parser/lib/index";
 import "quill/dist/quill.bubble.css";
 import { cn, calculateReadingTime } from "@/lib/utils";
 import { Button } from "./Button";
-import { Bookmark, Heart, ImageIcon, MessageCircle, UserIcon } from "lucide-react";
+import { Bookmark, Eye, Heart, ImageIcon, MessageCircle, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { TagList } from "./TagList";
 
@@ -23,11 +23,14 @@ const PostCard = ({
   onClick,
   onDelete,
   featured,
+  showViews,
 }: {
   data: Partial<TPost>;
   onClick?: () => void;
   onDelete?: () => void;
   featured?: boolean;
+  /** View counts are for the writer's own lists only. */
+  showViews?: boolean;
 }) => {
   const postCreateRelativeTime = useMemo(() => {
     const createdDate = dayjs(data.created_at);
@@ -153,6 +156,12 @@ const PostCard = ({
 
         <div className="mt-auto pt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {readingTime ? <span>{readingTime} min read</span> : null}
+          {showViews && (
+            <span className="flex gap-1 items-center" title="Views">
+              <Eye className="w-3.5 h-3.5" />
+              {(data.view_count ?? 0).toLocaleString()}
+            </span>
+          )}
           <span className="flex gap-1 items-center">
             <Heart className="w-3.5 h-3.5" />
             {data.likes_count ?? 0}

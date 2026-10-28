@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import PostLayout from "./PostLayout";
 import { excerpt, getPublicPost, siteUrl, stripHtml } from "@/lib/server/post";
 import { parseTags } from "@/lib/tags";
@@ -14,7 +14,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = stripHtml(post.title) || "Untitled";
   const description =
     excerpt(post.sub_title) || excerpt(post.content) || "Read on Chronicle.";
-  const images = post.thumbnail_url ? [post.thumbnail_url] : undefined;
   const url = siteUrl ? `${siteUrl}/post/${post.id}` : undefined;
   const tags = parseTags(post.tags);
 
@@ -28,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url,
-      images,
+      // The image comes from opengraph-image.tsx next to this page.
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
       authors: post.user?.name ? [post.user.name] : undefined,
@@ -36,10 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Chronicle",
     },
     twitter: {
-      card: images ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      images,
     },
   };
 }
@@ -47,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const Post = async ({ params }: Props) => {
   const param = await params;
 
-  if (isNaN(parseInt(param.id))) redirect("/dashboard");
+  if (!/^\d+$/.test(param.id)) notFound();
 
   const id = Number(param.id);
   // Server-rendered so crawlers and link previews get the article, not a skeleton.

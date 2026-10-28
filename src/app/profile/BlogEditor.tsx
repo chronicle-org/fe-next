@@ -18,7 +18,6 @@ import {
   TPost,
   updateCounter,
   updateInteraction,
-  publishDraft,
 } from "@/lib/api/post";
 import {
   fileUploadKey,
@@ -28,12 +27,22 @@ import {
 import { useUserStore } from "@/lib/stores/user.store";
 import { InteractionType } from "@/lib/types";
 import { updateCookie, calculateReadingTime } from "@/lib/utils";
+import {
+  clearLocalCopy,
+  isBlankDraft,
+  readLocalCopy,
+  sameDraft,
+  TDraftFields,
+  useDraftAutosave,
+} from "@/lib/hooks/useDraftAutosave";
+import dayjs from "dayjs";
 import { useMutation } from "@tanstack/react-query";
 import HTMLReactParser from "html-react-parser/lib/index";
 import {
   Bookmark,
   Check,
   Copy,
+  Eye,
   Heart,
   LinkIcon,
   Share2,
@@ -92,6 +101,47 @@ export const BlogEditor = ({
     [],
   );
 
+  const isEditing = !isVisit && !!user;
+  const [restorable, setRestorable] = useState<
+    (TDraftFields & { saved_at: string }) | null
+  >(null);
+
+  // Offer back text this browser kept from an earlier visit that never
+  // reached the server, such as edits to a published post or a closed tab.
+  useEffect(() => {
+    if (!isEditing || !user?.id) return;
+    const copy = readLocalCopy(user.id, data?.id);
+    if (!copy) return;
+    if (isBlankDraft(copy) || sameDraft(copy, data ?? {})) {
+      clearLocalCopy(user.id, data?.id);
+      return;
+    }
+    setRestorable(copy);
+    // Only on opening the editor; later changes are the writer's own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing, user?.id, data?.id]);
+
+  const autosave = useDraftAutosave({
+    // Hold off while a kept copy is on offer, so it isn't overwritten.
+    enabled: isEditing && !restorable,
+    userId: user?.id,
+    postId: data?.id,
+    // Saving a published post to the server would publish unfinished edits.
+    syncToServer: !data?.id || !!data?.is_draft,
+    fields: formData,
+  });
+
+  const autosaveLabel = useMemo(() => {
+    const { status } = autosave;
+    if (status.state === "saving") return "Saving…";
+    if (status.state === "error") return "Couldn't save, kept on this device";
+    if (status.state === "saved")
+      return status.where === "server"
+        ? `Draft saved ${dayjs(status.at).format("HH:mm")}`
+        : "Changes kept on this device";
+    return null;
+  }, [autosave]);
+
   const estimatedReadingTime = useMemo(() => {
     return formData.content ? calculateReadingTime(formData.content) : 0;
   }, [formData.content]);
@@ -103,7 +153,10 @@ export const BlogEditor = ({
 
   const { mutate: submitPost, isPending: isSubmittingPost } = useMutation({
     mutationFn: (data: TAddPostPayload) => addPost(data),
-    onSuccess: () => onBack?.(),
+    onSuccess: () => {
+      autosave.finish();
+      onBack?.();
+    },
     onError: (err: TApiErrorResponse) => {
       toast.error(getApiErrorMessage(err));
     },
@@ -112,56 +165,51 @@ export const BlogEditor = ({
   const { mutate: updatePost, isPending: isUpdatingPost } = useMutation({
     mutationFn: (payload: { id: number; data: Partial<TAddPostPayload> }) =>
       editPost(payload.id, payload.data),
-    onSuccess: () => onBack?.(),
+    onSuccess: (_, payload) => {
+      autosave.finish();
+      const wasDraft = data?.is_draft || (!data?.id && !!autosave.createdId);
+      if (wasDraft && payload.data.is_draft === false)
+        toast.success("Draft published successfully!");
+      onBack?.();
+    },
     onError: (err: TApiErrorResponse) => {
       toast.error(getApiErrorMessage(err));
     },
   });
 
-  const { mutate: publishDraftPost, isPending: isPublishingDraft } =
-    useMutation({
-      mutationFn: (id: number) => publishDraft(id),
-      onSuccess: () => {
-        toast.success("Draft published successfully!");
-        onBack?.();
-      },
-      onError: (err: TApiErrorResponse) => {
-        toast.error(getApiErrorMessage(err));
-      },
-    });
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const save = async (asDraft: boolean) => {
+    // Let a running autosave finish first, so a new post isn't created twice.
+    const savedId = await autosave.flush();
+    const postId = data?.id ?? savedId;
     const newData = {
       title: formData.title,
       sub_title: formData.sub_title,
       content: formData.content,
       tags: formData.tags ?? "",
-      is_draft: isDraft,
+      is_draft: asDraft,
     };
-    if (!!formData.thumbnail_file)
-      await upload(
+    const send = (thumbnail_url?: string) => {
+      const payload = thumbnail_url ? { ...newData, thumbnail_url } : newData;
+      if (postId) updatePost({ id: postId, data: payload });
+      else submitPost(payload as TAddPostPayload);
+    };
+    if (formData.thumbnail_file)
+      upload(
         { file: formData.thumbnail_file, type: 1 },
         {
-          onSuccess: async (res) => {
-            if (data?.id)
-              await updatePost({
-                id: data.id,
-                data: { ...newData, thumbnail_url: res.data.content?.url },
-              });
-            else await submitPost({ ...newData, thumbnail_url: res.data.content?.url } as TAddPostPayload);
-          },
+          onSuccess: (res) => send(res.data.content?.url),
           onError: (error) => {
             const err = error as TApiErrorResponse;
             toast.error(getApiErrorMessage(err));
           },
         },
       );
-    else {
-      const dataToSubmit = { ...newData, is_draft: isDraft };
-      if (data?.id) await updatePost({ id: data.id, data: dataToSubmit });
-      else await submitPost(dataToSubmit as TAddPostPayload);
-    }
+    else send();
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void save(isDraft);
   };
 
   const handleChange = (key: keyof typeof formData, value?: string | File) => {
@@ -245,11 +293,13 @@ export const BlogEditor = ({
 
   useEffect(() => {
     if (!data?.id || initRef.current) return;
+    // The API skips a writer's own views too; this saves the request.
+    if (user && user.id === data.user_id) return;
     if (isVisit || isPostView) {
       initRef.current = true;
       addCounter("view");
     }
-  }, [isVisit, isPostView, data?.id, addCounter]);
+  }, [isVisit, isPostView, data?.id, data?.user_id, user, addCounter]);
 
   return (
     <>
@@ -356,6 +406,16 @@ export const BlogEditor = ({
                   )}
                 </div>
 
+                {autosaveLabel && (
+                  <span
+                    className="text-xs text-muted-foreground"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {autosaveLabel}
+                  </span>
+                )}
+
                 {estimatedReadingTime > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {estimatedReadingTime} min read
@@ -376,8 +436,8 @@ export const BlogEditor = ({
                   <Button
                     variant={"default"}
                     type="button"
-                    disabled={isPublishingDraft}
-                    onClick={() => publishDraftPost(data.id!)}
+                    disabled={isUploadingFile || isUpdatingPost}
+                    onClick={() => void save(false)}
                   >
                     Publish
                   </Button>
@@ -395,6 +455,48 @@ export const BlogEditor = ({
               </div>
             )}
           </div>
+
+          {restorable && (
+            <div
+              role="alert"
+              className="w-full max-w-[800px] mx-auto flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/40 bg-brand-soft px-4 py-3 text-sm"
+            >
+              <span>
+                You have unsaved changes from{" "}
+                {dayjs(restorable.saved_at).format("D MMM, HH:mm")}.
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    if (user) clearLocalCopy(user.id, data?.id);
+                    setRestorable(null);
+                  }}
+                >
+                  Discard
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="brand"
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      title: restorable.title,
+                      sub_title: restorable.sub_title,
+                      content: restorable.content,
+                      tags: restorable.tags,
+                    }));
+                    setRestorable(null);
+                  }}
+                >
+                  Restore
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className={cn("w-full flex flex-col gap-10 mx-auto", isVisit ? "max-w-[720px]" : "max-w-[800px]")}>
             <div className="flex gap-10 items-center max-md:flex-wrap-reverse">
@@ -507,6 +609,16 @@ export const BlogEditor = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {user && user.id === data?.user_id && (
+                    <span
+                      className="flex items-center gap-1 text-sm text-muted-foreground mr-1"
+                      title="Only you can see this"
+                    >
+                      <Eye className="w-4 h-4" />
+                      {(data?.view_count ?? 0).toLocaleString()}{" "}
+                      {data?.view_count === 1 ? "view" : "views"}
+                    </span>
+                  )}
                   <Heart
                     color={
                       user?.likes?.includes(data?.id || 0)
