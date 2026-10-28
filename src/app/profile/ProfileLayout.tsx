@@ -18,7 +18,7 @@ import "react-quill-new/dist/quill.bubble.css";
 import { fileUploadKey } from "@/lib/constants";
 import { findOne, TPost, getDrafts } from "@/lib/api/post";
 import ImageUploader from "@/components/ui/UploadImage";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadFile } from "@/lib/api/file";
 import { toast } from "sonner";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
@@ -66,6 +66,7 @@ const ProfileLayout = ({
     data?: Partial<TPost>;
   }>();
   const [tab, setTab] = useState("posts");
+  const queryClient = useQueryClient();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
   // Profiles can be visited logged out, where there are no settings to load.
@@ -268,6 +269,8 @@ const ProfileLayout = ({
               onBack={() => {
                 removeParam("post_id");
                 setEdit({ status: false });
+                // Autosave may have created or changed a draft.
+                queryClient.invalidateQueries({ queryKey: ["drafts"] });
               }}
               isVisit={isVisit}
               onUpdatePostCounter={(post) =>
