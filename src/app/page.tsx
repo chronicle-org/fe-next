@@ -4,18 +4,20 @@ import PostCard from "@/components/ui/PostCard";
 import { getAllPosts } from "@/lib/api/post";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/Button";
 import { usePaginationQuery } from "@/lib/hooks/usePaginatedQuery";
 import { parseTags } from "@/lib/tags";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
 
   const {
     data: posts,
     isLoading,
+    isFetching,
     setFilters,
     pagination,
   } = usePaginationQuery({
@@ -35,6 +37,11 @@ export default function Home() {
   });
 
   const isSearching = !!pagination.filters.search;
+  // What's in the box right now; it runs ahead of the debounced filter, so
+  // the loading state shows from the first keystroke.
+  const [typed, setTyped] = useState("");
+  const searchPending =
+    !isLoading && (isFetching || typed.trim() !== pagination.filters.search.trim());
   const [featured, ...rest] = posts || [];
 
   // Most used tags across the loaded posts
@@ -58,18 +65,24 @@ export default function Home() {
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
         <main className="flex flex-col gap-5 min-w-0">
           <div className="flex justify-between items-center flex-wrap gap-4 border-b border-border pb-3">
-            <h2 className="font-serif text-2xl font-semibold">
-              {isSearching ? "Search results" : "Fresh from the community"}
+            <h2 className="font-serif text-2xl font-semibold" aria-live="polite">
+              {searchPending
+                ? "Searching…"
+                : isSearching
+                  ? "Search results"
+                  : "Fresh from the community"}
             </h2>
             <SearchBar
               debounce={500}
+              loading={searchPending}
+              onInput={setTyped}
               onChange={(value) => {
                 setFilters({ search: value });
               }}
             />
           </div>
 
-          {isLoading ? (
+          {isLoading || (searchPending && !posts?.length) ? (
             <div className="flex justify-center py-10">
               <Spinner />
             </div>
@@ -78,7 +91,13 @@ export default function Home() {
               {isSearching ? "No stories match that search." : "No stories yet."}
             </p>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div
+              className={cn(
+                "flex flex-col gap-4 transition-opacity",
+                searchPending && "opacity-50 pointer-events-none",
+              )}
+              aria-busy={searchPending}
+            >
               {featured && !isSearching && <PostCard data={featured} featured />}
               {(isSearching ? posts : rest).map((item) => (
                 <PostCard data={item} key={item.id} />

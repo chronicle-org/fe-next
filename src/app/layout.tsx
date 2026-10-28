@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import NoSSRNavigation from "@/components/ui/NoSSRNavigation";
 import ButtonBackToTop from "@/components/ui/ButtonBackToTop";
+import OverlayScrollbar from "@/components/ui/OverlayScrollbar";
 import Providers from "./provider";
 import { Toaster } from "sonner";
 import { siteUrl } from "@/lib/server/post";
@@ -60,6 +61,7 @@ export default async function RootLayout({
             <NoSSRNavigation />
             {children}
             <ButtonBackToTop />
+            <OverlayScrollbar />
             <Toaster position="top-right" richColors closeButton />
           </ThemeProvider>
         </Providers>

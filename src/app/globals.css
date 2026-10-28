@@ -138,6 +138,24 @@
   }
 }
 
+/* SCROLLBARS */
+/* With a mouse, the page scrollbar is drawn by OverlayScrollbar over the
+   content, so hide the native one that takes layout width. */
+@media (pointer: fine) {
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Inner scroll areas (menus, notifications) get a slim themed bar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 25%, transparent) transparent;
+}
+
 /* QUILL */
 .ql-toolbar .ql-stroke {
   stroke: var(--foreground) !important; /* for line icons */

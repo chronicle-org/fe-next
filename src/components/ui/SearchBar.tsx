@@ -3,6 +3,7 @@ import { cn, debounce } from "@/lib/utils";
 import { SearchIcon } from "lucide-react";
 import { FormEvent, useEffect, useRef } from "react";
 import { CloseIcon } from "../Icons";
+import { Spinner } from "./spinner";
 
 interface SearchBarProps {
   value?: string;
@@ -10,7 +11,9 @@ interface SearchBarProps {
   placeholder?: string;
   debounce?: number;
   shortcut?: string;
+  loading?: boolean;
   onChange?: (value: string) => void;
+  onInput?: (value: string) => void;
   onSubmit?: (value: string) => void;
 }
 
@@ -19,7 +22,9 @@ export const SearchBar = ({
   defaultValue,
   placeholder = "Search posts...",
   shortcut,
+  loading,
   onChange,
+  onInput,
   onSubmit,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,11 +81,19 @@ export const SearchBar = ({
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full max-w-sm">
-      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {loading ? (
+        <Spinner
+          aria-label="Searching"
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand"
+        />
+      ) : (
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      )}
       <Input
         value={value}
         defaultValue={defaultValue}
         onChange={(e) => {
+          onInput?.(e.currentTarget.value);
           debounceSearch(e.currentTarget.value);
           if (!inputRef.current?.value)
             closeRef.current?.classList.toggle("hidden", true);
@@ -103,6 +116,7 @@ export const SearchBar = ({
         ref={closeRef}
         className="absolute hidden right-3 top-1/2 -translate-y-1/2 h-fit w-fit text-muted-foreground cursor-pointer"
         onClick={() => {
+          onInput?.("");
           debounceSearch("");
           if (inputRef.current) inputRef.current.value = "";
           closeRef.current?.classList.toggle("hidden", true);
