@@ -62,4 +62,20 @@ test("draws an overlay scrollbar that hides when idle", async ({ page }) => {
   await page.mouse.wheel(0, 600);
   await expect(bar).toHaveCSS("opacity", "1");
   await expect(bar).toHaveCSS("opacity", "0", { timeout: 3000 });
+
+  // Keyboard scrolling reveals it too.
+  await page.locator("body").click({ position: { x: 5, y: 300 } });
+  await page.keyboard.press("End");
+  await expect(bar).toHaveCSS("opacity", "1");
+  await expect(bar).toHaveCSS("opacity", "0", { timeout: 3000 });
+
+  // Moving the mouse to the right edge reveals it, and it lingers after
+  // the mouse moves away instead of vanishing at once.
+  const width = page.viewportSize()!.width;
+  await page.mouse.move(width - 4, 300);
+  await expect(bar).toHaveCSS("opacity", "1");
+  await page.mouse.move(width / 2, 300);
+  await page.waitForTimeout(400);
+  await expect(bar).toHaveCSS("opacity", "1");
+  await expect(bar).toHaveCSS("opacity", "0", { timeout: 3000 });
 });
