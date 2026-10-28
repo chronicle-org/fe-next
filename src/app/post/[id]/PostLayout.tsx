@@ -2,6 +2,7 @@
 
 import { BlogEditor } from "@/app/profile/BlogEditor";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PostNotFound } from "@/components/ui/ErrorState";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { findOne, TPost } from "@/lib/api/post";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,10 +28,12 @@ export const PostLayout = ({
     queryFn: async () => {
       try {
         const res = await findOne(Number(id));
-        if (!res.data.content) throw new Error();
+        if (!res.data.content) return null;
         return res.data.content;
       } catch (error) {
         const err = error as TApiErrorResponse;
+        // Deleted posts and other people's drafts get a proper 404 page.
+        if (err.response?.status === 404) return null;
         toast.error(getApiErrorMessage(err));
         push("/dashboard");
       }
@@ -38,6 +41,7 @@ export const PostLayout = ({
   });
 
   if (!id || (isFetching && !data)) return <PostSkeleton />;
+  if (data === null) return <PostNotFound />;
 
   return (
     <div className="py-10 max-w-[90vw] mx-auto w-full">
