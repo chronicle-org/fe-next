@@ -182,9 +182,9 @@ const OverlayScrollbar = () => {
         className={
           "absolute right-0.5 top-0 rounded-full cursor-default " +
           "transition-[width,background-color] duration-150 " +
-          "w-1.5 bg-ink/35 dark:bg-white/30 " +
+          "w-1.5 bg-foreground/35 " +
           "group-hover:w-2.5 group-hover:bg-brand " +
-          "group-data-[dragging=true]:w-2.5 group-data-[dragging=true]:bg-brand dark:group-data-[dragging=true]:bg-brand"
+          "group-data-[dragging=true]:w-2.5 group-data-[dragging=true]:bg-brand"
         }
         onPointerDown={onThumbDown}
         onPointerMove={onThumbMove}
