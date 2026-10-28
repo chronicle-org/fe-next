@@ -34,7 +34,6 @@ import {
   Bookmark,
   Check,
   Copy,
-  GalleryThumbnailsIcon,
   Heart,
   LinkIcon,
   Share2,
@@ -397,13 +396,13 @@ export const BlogEditor = ({
             )}
           </div>
 
-          <div className="w-full flex flex-col gap-10 max-w-[800px] mx-auto">
+          <div className={cn("w-full flex flex-col gap-10 mx-auto", isVisit ? "max-w-[720px]" : "max-w-[800px]")}>
             <div className="flex gap-10 items-center max-md:flex-wrap-reverse">
               <div className="flex flex-col gap-5 w-full">
                 <div>
                   {isVisit ? (
-                    <div className="w-full ql-bubble">
-                      <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
+                    <div className="w-full ql-bubble story-title">
+                      <div className="w-fit! h-fit! p-0! ql-editor text-3xl! sm:text-4xl! leading-tight!">
                         {HTMLReactParser(data?.title || "")}
                       </div>
                     </div>
@@ -420,7 +419,7 @@ export const BlogEditor = ({
                 <div>
                   {isVisit ? (
                     <div className="w-full ql-bubble">
-                      <div className="line-clamp-2 w-fit! h-fit! p-0! ql-editor">
+                      <div className="w-fit! h-fit! p-0! ql-editor text-lg! text-muted-foreground">
                         {HTMLReactParser(data?.sub_title || "")}
                       </div>
                     </div>
@@ -446,9 +445,7 @@ export const BlogEditor = ({
                         className="rounded-2xl object-cover"
                       />
                     </div>
-                  ) : (
-                    <GalleryThumbnailsIcon className="w-full aspect-square" />
-                  )}
+                  ) : null}
                 </>
               ) : (
                 <ImageUploader
@@ -468,7 +465,7 @@ export const BlogEditor = ({
             )}
             <div>
               {isVisit ? (
-                <div className="w-full ql-bubble">
+                <div className="w-full ql-bubble story-body">
                   <div className="ql-editor p-0!">
                     {HTMLReactParser(data?.content || "")}
                   </div>
@@ -484,7 +481,7 @@ export const BlogEditor = ({
               )}
             </div>
             {isPostView && (
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center border-y border-border py-4">
                 <div
                   className="w-fit max-w-[200px] flex gap-2 items-center cursor-pointer"
                   onClick={() => push(`/profile/${data?.user_id}`)}
@@ -513,10 +510,10 @@ export const BlogEditor = ({
                   <Heart
                     color={
                       user?.likes?.includes(data?.id || 0)
-                        ? "red"
+                        ? "var(--brand)"
                         : "var(--muted-foreground)"
                     }
-                    fill={user?.likes?.includes(data?.id || 0) ? "red" : "none"}
+                    fill={user?.likes?.includes(data?.id || 0) ? "var(--brand)" : "none"}
                     className={cn("w-5 h-5", user ? "cursor-pointer" : "")}
                     onClick={() => {
                       if (!user) return;
@@ -530,12 +527,12 @@ export const BlogEditor = ({
                   <Bookmark
                     color={
                       user?.bookmarks?.includes(data?.id || 0)
-                        ? "yellow"
+                        ? "var(--brand)"
                         : "var(--muted-foreground)"
                     }
                     fill={
                       user?.bookmarks?.includes(data?.id || 0)
-                        ? "yellow"
+                        ? "var(--brand)"
                         : "none"
                     }
                     className={cn("w-5 h-5", user ? "cursor-pointer" : "")}
@@ -549,7 +546,7 @@ export const BlogEditor = ({
                     }}
                   />
                   <div
-                    className="cursor-pointer flex gap-2 items-center bg-muted text-muted-foreground px-2 py-1 rounded"
+                    className="cursor-pointer flex gap-2 items-center bg-brand-soft text-foreground px-3 py-1 rounded-full text-sm"
                     onClick={() =>
                       setModalShare({
                         show: true,

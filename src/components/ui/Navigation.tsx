@@ -164,7 +164,7 @@ const Navigation = () => {
   );
 
   return (
-    <nav className="bg-[#151821] text-white w-full sticky top-0 z-50">
+    <nav className="bg-ink text-white w-full sticky top-0 z-50 border-b border-white/5">
       <ul
         className="flex gap-1 w-full justify-between p-2 px-10 max-lg:px-4 [&>li]:w-full"
         suppressHydrationWarning
@@ -172,7 +172,7 @@ const Navigation = () => {
         <li className="flex items-center">
           <Link
             href={!!user ? "/dashboard" : "/"}
-            className="flex gap-1 w-fit items-center"
+            className="flex gap-2 w-fit items-center font-serif text-lg font-semibold tracking-tight"
           >
             <Image
               src={"/chronicle-logo.svg"}
@@ -201,7 +201,7 @@ const Navigation = () => {
         <li>
           <div className="flex justify-end items-center gap-4 min-h-9">
             {pathname !== "/auth" && !user && (
-              <Button variant={"secondary"} onClick={() => push("/auth")}>
+              <Button variant={"brand"} onClick={() => push("/auth")}>
                 <span className="max-sm:hidden">Start Writing!</span>
                 <span className="sm:hidden">
                   <Pencil className="w-4 h-4" />
