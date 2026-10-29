@@ -5,7 +5,7 @@ import { parseTags } from "@/lib/tags";
 const chipClassName =
   "inline-flex items-center rounded-full bg-brand-soft px-2.5 py-0.5 text-xs text-foreground/80";
 
-// Linked chips open a search for the tag; leave `linked` off inside
+// Linked chips open the tag's page; leave `linked` off inside
 // elements that are already links (like PostCard) to avoid nested <a>.
 export const TagList = ({
   tags,
@@ -27,7 +27,7 @@ export const TagList = ({
         <li key={tag}>
           {linked ? (
             <Link
-              href={`/search?q=${encodeURIComponent(tag)}`}
+              href={`/search?tag=${encodeURIComponent(tag)}`}
               className={cn(chipClassName, "hover:text-foreground")}
             >
               #{tag}

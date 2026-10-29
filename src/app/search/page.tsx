@@ -1,83 +1,78 @@
 "use client";
 
-import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
-import PostCard from "@/components/ui/PostCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getAllPosts } from "@/lib/api/post";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { PostFeed } from "@/components/ui/PostFeed";
+import { getAllPosts, TPostSort } from "@/lib/api/post";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-const limit = 10;
+const SORTS: { value: TPostSort; label: string }[] = [
+  { value: "latest", label: "Latest" },
+  { value: "likes", label: "Most liked" },
+  { value: "views", label: "Most viewed" },
+];
 
+// /search?q=text searches titles and tags; /search?tag=name lists one tag.
 const Search = () => {
   const searchParams = useSearchParams();
-  const query = decodeURIComponent(searchParams.get("q") || "");
+  const query = searchParams.get("q")?.trim() || "";
+  const tag = searchParams.get("tag")?.trim() || "";
+  const sortParam = searchParams.get("sort") as TPostSort | null;
+  const sort = SORTS.some((s) => s.value === sortParam)
+    ? (sortParam as TPostSort)
+    : "latest";
   const { push } = useRouter();
 
-  if (!query) push("/");
+  useEffect(() => {
+    if (!query && !tag) push("/");
+  }, [query, tag, push]);
 
-  const { data, isLoading, fetchNextPage, hasNextPage } = useInfiniteQuery({
-    queryKey: ["search", query],
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) => {
-      return getAllPosts({
-        page: pageParam,
-        limit,
-        search: query as string,
-      });
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      const currentPage = allPages.length;
+  const sortHref = (value: TPostSort) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "latest") params.delete("sort");
+    else params.set("sort", value);
+    return `/search?${params.toString()}`;
+  };
 
-      const loadedContent = allPages
-        .map((page) => page.data.content?.data?.length)
-        .reduce((a, b) => (a || 0) + (b || 0), 0);
-      if ((loadedContent || 0) < (lastPage.data.content?.total || 0)) {
-        return currentPage + 1;
-      }
-      return undefined;
-    },
-  });
+  if (!query && !tag) return null;
 
-  const posts = data?.pages
-    ?.map((response) => response.data.content?.data)
-    .flat();
   return (
     <div className="flex flex-col gap-5 px-5 sm:px-8 py-10 max-w-3xl w-full mx-auto">
-      <h1 className="font-serif text-2xl font-semibold border-b border-border pb-3">
-        Results
-      </h1>
-      <div className="flex flex-col gap-4 w-full">
-        {isLoading
-          ? Array(5)
-              .fill("")
-              .map((_, index) => {
-                return (
-                  <Skeleton
-                    className="h-[125px] rounded-xl w-full"
-                    key={index}
-                  />
-                );
-              })
-          : posts?.map((post, index) => {
-              if (!post)
-                return (
-                  <Skeleton
-                    className="h-[125px] rounded-xl w-full"
-                    key={index}
-                  />
-                );
-              return (
-                <PostCard
-                  data={post}
-                  key={post.id}
-                />
-              );
-            })}
-        {!isLoading && (
-          <InfiniteScroll loadMore={fetchNextPage} hasMore={hasNextPage} />
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <h1 className="font-serif text-2xl font-semibold break-all">
+          {tag ? `#${tag}` : <>Results for &ldquo;{query}&rdquo;</>}
+        </h1>
+        <nav
+          aria-label="Sort stories"
+          className="bg-muted text-muted-foreground inline-flex h-9 items-center rounded-lg p-[3px]"
+        >
+          {SORTS.map(({ value, label }) => (
+            <Link
+              key={value}
+              href={sortHref(value)}
+              replace
+              scroll={false}
+              aria-current={sort === value ? "page" : undefined}
+              className={cn(
+                "inline-flex h-full items-center rounded-md px-2.5 text-sm font-medium transition-colors hover:text-foreground",
+                sort === value && "bg-background text-foreground shadow-sm",
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
+      <PostFeed
+        queryKey={["search", { query, tag, sort }]}
+        fetchPage={(params) =>
+          getAllPosts({ ...params, search: query, tag, sort })
+        }
+        empty={
+          tag ? "No stories with this tag yet." : "No stories match that search."
+        }
+      />
     </div>
   );
 };

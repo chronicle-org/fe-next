@@ -75,6 +75,12 @@ const SignIn = ({ signupEnabled }: { signupEnabled: boolean }) => {
               setForm((prev) => ({ ...prev, password: e.target.value }))
             }
           />
+          <Link
+            href="/auth/forgot-password"
+            className="text-sm text-muted-foreground hover:text-foreground underline self-end"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         <Button type="submit" disabled={isLoggingIn}>
