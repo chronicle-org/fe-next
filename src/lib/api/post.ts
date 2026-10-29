@@ -1,8 +1,10 @@
+import { AxiosResponse } from "axios";
 import {
   deleteMethod,
   getMethod,
   postMethod,
   putMethod,
+  TApiErrorResponse,
   TApiResponse,
   TApiResponsePagination,
   TPaginationParam,
@@ -35,14 +37,68 @@ export type TPost = {
   user: Partial<TLoginResponse>;
 };
 
+export type TPostSort = "latest" | "likes" | "views";
+
 type TFetchFunctionParams = TPaginationParam & {
   search: string;
+  tag?: string;
+  sort?: TPostSort;
 };
 
+const listParams = ({ page, limit, search, tag, sort }: TFetchFunctionParams) => ({
+  page,
+  limit,
+  search,
+  // Only sent when used: an API without tag/sort support rejects them.
+  ...(tag ? { tag } : {}),
+  ...(sort && sort !== "latest" ? { sort } : {}),
+});
+
 export const getAllPosts = async (params: TFetchFunctionParams) => {
-  return getMethod<TApiResponsePagination<TPost[]>>(
-    `${baseUrl}?page=${params.page}&limit=${params.limit}&search=${params.search}`
-  );
+  try {
+    return await getMethod<TApiResponsePagination<TPost[]>>(baseUrl, {
+      params: listParams(params),
+    });
+  } catch (error) {
+    // Until the API knows tag and sort, fall back to a text search for the
+    // tag in newest-first order.
+    const usesNewParams = !!params.tag || (params.sort ?? "latest") !== "latest";
+    if (!usesNewParams || (error as TApiErrorResponse).response?.status !== 400)
+      throw error;
+    return getMethod<TApiResponsePagination<TPost[]>>(baseUrl, {
+      params: listParams({
+        ...params,
+        search: params.search || params.tag || "",
+        tag: undefined,
+        sort: undefined,
+      }),
+    });
+  }
+};
+
+/** Posts from the writers the signed-in user follows. */
+export const getFollowingFeed = async (params: TPaginationParam) => {
+  try {
+    return await getMethod<TApiResponsePagination<TPost[]>>(
+      `${baseUrl}/feed/following`,
+      { params }
+    );
+  } catch (error) {
+    // An API from before the feed existed has no such route; show it empty.
+    const response = (error as TApiErrorResponse).response;
+    if (response?.status !== 404) throw error;
+    return {
+      ...response,
+      data: { ...response.data, content: { data: [], total: 0 } },
+    } as AxiosResponse<TApiResponsePagination<TPost[]>>;
+  }
+};
+
+/** Posts to read next after this one. */
+export const getRelatedPosts = async (id: number, limit = 3) => {
+  return getMethod<TApiResponse<TPost[]>>(`${baseUrl}/${id}/related`, {
+    params: { limit },
+  });
 };
 
 export const getAllPostsByUser = async (
