@@ -309,7 +309,7 @@ export const BlogEditor = ({
       >
         <div className="flex flex-col gap-2">
           <div className="flex rounded-lg shadow-sm">
-            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-input bg-muted text-muted-foreground text-sm">
               <LinkIcon className="w-4 h-4" />
             </span>
             <input
@@ -319,7 +319,7 @@ export const BlogEditor = ({
               type="text"
               readOnly
               value={modalShare.shareUrl}
-              className="flex-1 min-w-0 block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 min-w-0 block w-full px-4 py-2 border border-input bg-background text-foreground text-sm focus:ring-ring focus:border-ring"
             />
             <button
               onClick={handleCopy}
@@ -327,7 +327,7 @@ export const BlogEditor = ({
                 "inline-flex items-center px-4 py-2 rounded-r-lg text-sm font-medium transition duration-150 ease-in-out cursor-pointer",
                 copied
                   ? "bg-green-500 text-white"
-                  : "bg-blue-500 text-white hover:bg-blue-600",
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
               )}
             >
               {copied ? (
