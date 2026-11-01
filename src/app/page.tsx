@@ -116,7 +116,7 @@ export default function Home() {
                 {topics.map((tag) => (
                   <li key={tag}>
                     <Link
-                      href={`/search?q=${encodeURIComponent(tag)}`}
+                      href={`/search?tag=${encodeURIComponent(tag)}`}
                       className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs hover:bg-brand hover:text-brand-foreground transition-colors"
                     >
                       #{tag}

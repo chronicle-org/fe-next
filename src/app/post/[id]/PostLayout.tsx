@@ -2,6 +2,7 @@
 
 import { BlogEditor } from "@/app/profile/BlogEditor";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RelatedPosts } from "@/components/ui/RelatedPosts";
 import { PostNotFound } from "@/components/ui/ErrorState";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { findOne, TPost } from "@/lib/api/post";
@@ -60,6 +61,7 @@ export const PostLayout = ({
           queryClient.setQueryData([`post-data-${id}`], post)
         }
       />
+      {data && !data.is_draft && <RelatedPosts postId={data.id} />}
     </div>
   );
 };

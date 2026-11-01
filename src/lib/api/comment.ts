@@ -18,6 +18,10 @@ export type TComment = {
   content: string;
   created_at: Date;
   updated_at: Date;
+  // Replies are one level deep: top-level comments carry their replies.
+  parent_id?: number | null;
+  replies?: TComment[];
+  reply_count?: number;
 };
 
 export const getAllByPostId = (postId: number, params: TPaginationParam) => {
@@ -28,7 +32,7 @@ export const getAllByPostId = (postId: number, params: TPaginationParam) => {
 };
 
 export const postComment = (
-  payload: Pick<TComment, "post_id" | "content">
+  payload: Pick<TComment, "post_id" | "content"> & { parent_id?: number }
 ) => {
   return postMethod<typeof payload, TApiResponse<TComment>>(
     `${baseUrl}`,

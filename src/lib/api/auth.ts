@@ -70,3 +70,17 @@ export const deleteAccount = (password: string) => {
     data: { password },
   });
 };
+
+export const requestPasswordReset = (email: string) => {
+  return postMethod<{ email: string }, TApiResponse<{ message: string }>>(
+    `${baseUrl}/forgot-password`,
+    { email }
+  );
+};
+
+export const resetPassword = (token: string, new_password: string) => {
+  return postMethod<
+    { token: string; new_password: string },
+    TApiResponse<{ message: string }>
+  >(`${baseUrl}/reset-password`, { token, new_password });
+};
