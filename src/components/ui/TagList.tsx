@@ -27,7 +27,7 @@ export const TagList = ({
         <li key={tag}>
           {linked ? (
             <Link
-              href={`/search?tag=${encodeURIComponent(tag)}`}
+              href={`/tag/${encodeURIComponent(tag)}`}
               className={cn(chipClassName, "hover:text-foreground")}
             >
               #{tag}

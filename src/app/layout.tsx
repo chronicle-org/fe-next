@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import NoSSRNavigation from "@/components/ui/NoSSRNavigation";
+import { VerifyEmailBanner } from "@/components/ui/VerifyEmailBanner";
 import ButtonBackToTop from "@/components/ui/ButtonBackToTop";
 import OverlayScrollbar from "@/components/ui/OverlayScrollbar";
 import Providers from "./provider";
@@ -59,6 +60,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <NoSSRNavigation />
+            <VerifyEmailBanner />
             {children}
             <ButtonBackToTop />
             <OverlayScrollbar />

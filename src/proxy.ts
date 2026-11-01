@@ -4,7 +4,7 @@ import { getCookie } from "./lib/utils";
 
 const authRoutes = ["/auth"];
 
-const protectedRoutes = ["/dashboard", "/setting"];
+const protectedRoutes = ["/dashboard", "/setting", "/stats", "/admin"];
 
 // Your own profile needs a login; other people's (/profile/:id) are public.
 const isProtected = (pathname: string) =>

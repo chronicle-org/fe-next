@@ -19,6 +19,7 @@ export function useLoadMoreQuery<TItem>({
   fetchPage,
   enabled = true,
   limit = LOAD_MORE_LIMIT,
+  initialPage,
 }: {
   queryKey: QueryKey;
   fetchPage: (
@@ -26,11 +27,17 @@ export function useLoadMoreQuery<TItem>({
   ) => Promise<AxiosResponse<TApiResponsePagination<TItem[]>>>;
   enabled?: boolean;
   limit?: number;
+  /** A first page already fetched on the server, shown without refetching. */
+  initialPage?: { data: TItem[]; total: number };
 }) {
   const query = useInfiniteQuery({
     queryKey,
     enabled,
     initialPageParam: 1,
+    ...(initialPage && {
+      initialData: { pages: [initialPage], pageParams: [1] },
+      staleTime: 60_000,
+    }),
     queryFn: async ({ pageParam }) => {
       try {
         const res = await fetchPage({ page: pageParam, limit });

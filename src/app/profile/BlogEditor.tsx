@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { CommentSection } from "@/components/ui/CommentSection";
 import { Modal } from "@/components/ui/Modal";
+import { ReportDialog } from "@/components/ui/ReportDialog";
 import ImageUploader from "@/components/ui/UploadImage";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import { TLoginResponse } from "@/lib/api/auth";
@@ -43,6 +44,7 @@ import {
   Check,
   Copy,
   Eye,
+  Flag,
   Heart,
   LinkIcon,
   Share2,
@@ -88,6 +90,7 @@ export const BlogEditor = ({
   );
   const [isDraft, setIsDraft] = useState<boolean>(data?.is_draft || false);
   const initRef = useRef(false);
+  const [reporting, setReporting] = useState(false);
   const [modalShare, setModalShare] = useState<{
     show: boolean;
     shareUrl?: string;
@@ -672,11 +675,29 @@ export const BlogEditor = ({
                     />
                     Share
                   </div>
+                  {user && data?.id && user.id !== data.user_id && (
+                    <button
+                      type="button"
+                      aria-label="Report this post"
+                      title="Report this post"
+                      className="cursor-pointer text-muted-foreground hover:text-destructive"
+                      onClick={() => setReporting(true)}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </form>
+        {data?.id && (
+          <ReportDialog
+            isOpen={reporting}
+            onClose={() => setReporting(false)}
+            target={{ post_id: data.id }}
+          />
+        )}
         {user && (
           <CommentSection
             postId={data?.id}

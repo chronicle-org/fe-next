@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn, debounce, deleteCookie } from "@/lib/utils";
 import { logUserOut, TLoginResponse } from "@/lib/api/auth";
+import { getReportAccess } from "@/lib/api/report";
 import { toast } from "sonner";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
@@ -43,6 +44,7 @@ import {
   keepPreviousData,
   useInfiniteQuery,
   useMutation,
+  useQuery,
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -248,6 +250,19 @@ const DropdownNavMenu = ({ user }: { user: TLoginResponse | null }) => {
   const { push } = useRouter();
 
   const setUser = useStore(useUserStore, (s) => s.setUser);
+  // Only admins get the Reports link; an older API without reports says no.
+  const { data: isAdmin } = useQuery({
+    queryKey: ["reports", "access", user?.id],
+    enabled: !!user,
+    staleTime: Infinity,
+    queryFn: async () => {
+      try {
+        return (await getReportAccess()).data.content?.is_admin ?? false;
+      } catch {
+        return false;
+      }
+    },
+  });
 
   const handleLogout = () => {
     toast.promise(logUserOut(), {
@@ -287,6 +302,14 @@ const DropdownNavMenu = ({ user }: { user: TLoginResponse | null }) => {
         <DropdownMenuItem onClick={() => push("/profile")}>
           Profile
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => push("/stats")}>
+          Your stats
+        </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem onClick={() => push("/admin/reports")}>
+            Reports
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => push("/setting")}>
           Setting
         </DropdownMenuItem>

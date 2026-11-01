@@ -16,6 +16,7 @@ export const PostFeed = ({
   fetchPage,
   empty,
   enabled = true,
+  initialPage,
 }: {
   queryKey: QueryKey;
   fetchPage: (
@@ -23,9 +24,11 @@ export const PostFeed = ({
   ) => Promise<AxiosResponse<TApiResponsePagination<TPost[]>>>;
   empty: ReactNode;
   enabled?: boolean;
+  /** The first page, when it was already fetched on the server. */
+  initialPage?: { data: TPost[]; total: number };
 }) => {
   const { items, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useLoadMoreQuery({ queryKey, fetchPage, enabled, limit: 10 });
+    useLoadMoreQuery({ queryKey, fetchPage, enabled, limit: 10, initialPage });
 
   if (isLoading)
     return (

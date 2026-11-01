@@ -25,6 +25,8 @@ export type TLoginResponse = {
   likes_count: number;
   bookmarks?: number[];
   bookmarks_count: number;
+  // false until the sign-up link is opened; missing on older API responses.
+  email_verified?: boolean;
 };
 
 export type TRegisterPayload = TLoginPayload & {
@@ -83,4 +85,17 @@ export const resetPassword = (token: string, new_password: string) => {
     { token: string; new_password: string },
     TApiResponse<{ message: string }>
   >(`${baseUrl}/reset-password`, { token, new_password });
+};
+
+export const verifyEmail = (token: string) => {
+  return postMethod<{ token: string }, TApiResponse<{ message: string }>>(
+    `${baseUrl}/verify-email`,
+    { token }
+  );
+};
+
+export const resendVerification = () => {
+  return postMethod<undefined, TApiResponse<{ message: string }>>(
+    `${baseUrl}/resend-verification`
+  );
 };

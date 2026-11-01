@@ -2,6 +2,7 @@ import {
   deleteMethod,
   getMethod,
   postMethod,
+  putMethod,
   TApiResponse,
   TApiResponsePagination,
   TPaginationParam,
@@ -42,4 +43,11 @@ export const postComment = (
 
 export const deleteComment = (id: number) => {
   return deleteMethod<TApiResponse<TComment>>(`${baseUrl}/${id}`);
+};
+
+export const editComment = (id: number, content: string) => {
+  return putMethod<{ content: string }, TApiResponse<TComment>>(
+    `${baseUrl}/${id}`,
+    { content }
+  );
 };
