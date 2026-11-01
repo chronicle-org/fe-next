@@ -144,6 +144,9 @@ test("replies to a comment", async ({ page }) => {
   await page.getByLabel("Reply to Writer").fill("Thanks for this");
   await page.getByRole("button", { name: "Reply", exact: true }).last().click();
 
+  // React mirrors a controlled textarea's value into its text, so wait for
+  // the reply box to close before looking for the posted reply.
+  await expect(page.getByLabel("Reply to Writer")).toHaveCount(0);
   await expect(page.getByText("Thanks for this")).toBeVisible();
   expect(sent).toEqual({ post_id: 5, content: "Thanks for this", parent_id: 20 });
 });
