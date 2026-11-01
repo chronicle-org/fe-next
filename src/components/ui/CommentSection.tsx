@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
-import { getAllByPostId, postComment, TComment } from "@/lib/api/comment";
+import {
+  editComment,
+  getAllByPostId,
+  postComment,
+  TComment,
+} from "@/lib/api/comment";
+import { ReportDialog } from "./ReportDialog";
 import { useMutation } from "@tanstack/react-query";
 import { useLoadMoreQuery } from "@/lib/hooks/useLoadMoreQuery";
 import { LoadMore } from "./LoadMore";
@@ -96,6 +102,7 @@ export const CommentSection = ({
             <li key={comment.id} className="flex flex-col gap-3">
               <CommentItem
                 comment={comment}
+                viewerId={userId}
                 canDelete={
                   userId === comment.user.id || userId === postOwnerId
                 }
@@ -104,6 +111,7 @@ export const CommentSection = ({
                   (() => onDelete(comment.id, () => refetchComments()))
                 }
                 onReply={() => setReplyingTo(comment.id)}
+                onEdited={() => refetchComments()}
               />
               {(!!comment.replies?.length || replyingTo === comment.id) && (
                 <ul className="flex flex-col gap-3 ml-5 sm:ml-10 pl-4 border-l-2 border-border">
@@ -111,6 +119,7 @@ export const CommentSection = ({
                     <li key={reply.id}>
                       <CommentItem
                         comment={reply}
+                        viewerId={userId}
                         canDelete={
                           userId === reply.user.id || userId === postOwnerId
                         }
@@ -119,6 +128,7 @@ export const CommentSection = ({
                           (() => onDelete(reply.id, () => refetchComments()))
                         }
                         onReply={() => setReplyingTo(comment.id)}
+                        onEdited={() => refetchComments()}
                       />
                     </li>
                   ))}
@@ -153,57 +163,151 @@ export const CommentSection = ({
 
 const CommentItem = ({
   comment,
+  viewerId,
   canDelete,
   onDelete,
   onReply,
+  onEdited,
 }: {
   comment: TComment;
+  viewerId?: number;
   canDelete: boolean;
   onDelete?: () => void;
   onReply: () => void;
-}) => (
-  <div className="flex gap-3 text-sm">
-    {!comment.user.picture_url ? (
-      <UserIcon className="shrink-0 size-8 p-1 rounded-full bg-muted" />
-    ) : (
-      <div className="relative size-8 shrink-0 rounded-full overflow-hidden">
-        <Image src={comment.user.picture_url} alt={comment.user.name} fill />
-      </div>
-    )}
-    <div className="flex flex-col gap-1 min-w-0 flex-1">
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <Link
-          href={`/profile/${comment.user.id}`}
-          className="font-medium hover:underline"
-        >
-          {comment.user.name}
-        </Link>
-        <span className="text-xs text-muted-foreground">
-          @{comment.user.handle} · {dayjs(comment.created_at).fromNow()}
-        </span>
-      </div>
-      <p className="whitespace-pre-wrap break-words">{comment.content}</p>
-      <div className="flex gap-3 text-xs text-muted-foreground">
-        <button
-          type="button"
-          className="hover:text-foreground cursor-pointer"
-          onClick={onReply}
-        >
-          Reply
-        </button>
-        {canDelete && onDelete && (
-          <button
-            type="button"
-            className="hover:text-destructive cursor-pointer"
-            onClick={onDelete}
+  onEdited: () => void;
+}) => {
+  const isOwn = viewerId === comment.user.id;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.content);
+  const [reporting, setReporting] = useState(false);
+  const edited =
+    new Date(comment.updated_at).getTime() -
+      new Date(comment.created_at).getTime() >
+    1000;
+
+  const { mutate: save, isPending: isSaving } = useMutation({
+    mutationFn: () => editComment(comment.id, draft.trim()),
+    onSuccess: () => {
+      toast.success("Comment updated");
+      setEditing(false);
+      onEdited();
+    },
+    onError: (error: TApiErrorResponse) => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  return (
+    <div className="flex gap-3 text-sm">
+      {!comment.user.picture_url ? (
+        <UserIcon className="shrink-0 size-8 p-1 rounded-full bg-muted" />
+      ) : (
+        <div className="relative size-8 shrink-0 rounded-full overflow-hidden">
+          <Image src={comment.user.picture_url} alt={comment.user.name} fill />
+        </div>
+      )}
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <Link
+            href={`/profile/${comment.user.id}`}
+            className="font-medium hover:underline"
           >
-            Delete
-          </button>
+            {comment.user.name}
+          </Link>
+          <span className="text-xs text-muted-foreground">
+            @{comment.user.handle} · {dayjs(comment.created_at).fromNow()}
+            {edited && " · edited"}
+          </span>
+        </div>
+        {editing ? (
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (draft.trim()) save();
+            }}
+          >
+            <Textarea
+              autoFocus
+              aria-label="Edit comment"
+              value={draft}
+              maxLength={5000}
+              disabled={isSaving}
+              onChange={(e) => setDraft(e.target.value)}
+            />
+            <div className="flex gap-2 self-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setDraft(comment.content);
+                  setEditing(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={
+                  !draft.trim() || draft.trim() === comment.content || isSaving
+                }
+              >
+                Save
+                {isSaving && <Spinner />}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <p className="whitespace-pre-wrap break-words">{comment.content}</p>
+        )}
+        {!editing && (
+          <div className="flex gap-3 text-xs text-muted-foreground">
+            <button
+              type="button"
+              className="hover:text-foreground cursor-pointer"
+              onClick={onReply}
+            >
+              Reply
+            </button>
+            {isOwn && (
+              <button
+                type="button"
+                className="hover:text-foreground cursor-pointer"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+            )}
+            {canDelete && onDelete && (
+              <button
+                type="button"
+                className="hover:text-destructive cursor-pointer"
+                onClick={onDelete}
+              >
+                Delete
+              </button>
+            )}
+            {viewerId && !isOwn && (
+              <button
+                type="button"
+                className="hover:text-destructive cursor-pointer"
+                onClick={() => setReporting(true)}
+              >
+                Report
+              </button>
+            )}
+          </div>
         )}
       </div>
+      <ReportDialog
+        isOpen={reporting}
+        onClose={() => setReporting(false)}
+        target={{ comment_id: comment.id }}
+      />
     </div>
-  </div>
-);
+  );
+};
 
 const ReplyForm = ({
   postId,

@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
-import { getRecentPosts, siteUrl } from "@/lib/server/post";
+import { getPopularTags, getRecentPosts, siteUrl } from "@/lib/server/post";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!siteUrl) return [];
-  const posts = await getRecentPosts();
+  const [posts, tags] = await Promise.all([getRecentPosts(), getPopularTags()]);
   // Profiles of the authors of those posts, once each.
   const authorIds = [...new Set(posts.map((post) => post.user_id))];
   return [
@@ -20,6 +20,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${siteUrl}/profile/${id}`,
       changeFrequency: "weekly" as const,
       priority: 0.5,
+    })),
+    ...tags.map(({ tag }) => ({
+      url: `${siteUrl}/tag/${encodeURIComponent(tag)}`,
+      changeFrequency: "daily" as const,
+      priority: 0.6,
     })),
   ];
 }

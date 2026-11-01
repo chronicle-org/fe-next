@@ -17,9 +17,15 @@ import { JSX, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ChangePassword } from "./ChangePassword";
 import { DeleteAccount } from "./DeleteAccount";
+import { BlockedPeople } from "./BlockedPeople";
 import { useStore } from "zustand";
 
-const menus = ["notification", "password", "delete account"];
+const menus = [
+  "notification",
+  "password",
+  "blocked people",
+  "delete account",
+];
 
 const Setting = () => {
   const [activeMenu, setActiveMenu] =
@@ -42,6 +48,8 @@ const Setting = () => {
         return <Notification data={user} />;
       case "password":
         return <ChangePassword />;
+      case "blocked people":
+        return <BlockedPeople />;
       case "delete account":
         return <DeleteAccount />;
       default:

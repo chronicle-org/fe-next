@@ -55,6 +55,59 @@ export const getRecentPosts = async (pages = 5, limit = 50): Promise<TPost[]> =>
   return posts;
 };
 
+/**
+ * The first page of a tag's posts, fetched on the server so tag pages have
+ * content for search engines. Falls back to a text search for the tag on an
+ * API that doesn't know `tag`/`sort` yet. Null if the API can't be reached.
+ */
+export const getTagPosts = async (
+  tag: string,
+  sort: "latest" | "likes" | "views",
+  limit = 10,
+): Promise<{ data: TPost[]; total: number } | null> => {
+  if (!apiUrl) return null;
+  const load = async (params: Record<string, string>) => {
+    const query = new URLSearchParams({ page: "1", limit: String(limit), ...params });
+    const res = await fetch(`${apiUrl}/post?${query}`, {
+      next: { revalidate: 300 },
+    });
+    return res;
+  };
+  try {
+    let res = await load({
+      tag,
+      ...(sort !== "latest" ? { sort } : {}),
+    });
+    if (res.status === 400) res = await load({ search: tag });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      content?: { data?: TPost[]; total: number };
+    };
+    return { data: body.content?.data ?? [], total: body.content?.total ?? 0 };
+  } catch {
+    return null;
+  }
+};
+
+/** The most used tags, for the sitemap; empty on an API without them. */
+export const getPopularTags = async (
+  limit = 100,
+): Promise<{ tag: string; count: number }[]> => {
+  if (!apiUrl) return [];
+  try {
+    const res = await fetch(`${apiUrl}/post/tags/popular?limit=${limit}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const body = (await res.json()) as {
+      content?: { tag: string; count: number }[];
+    };
+    return body.content ?? [];
+  } catch {
+    return [];
+  }
+};
+
 export const stripHtml = (html: string): string =>
   html
     .replace(/<[^>]*>/g, " ")

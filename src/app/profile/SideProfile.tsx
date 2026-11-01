@@ -2,6 +2,7 @@ import { EditIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/Button";
 import { FancyInput } from "@/components/ui/InputFancy";
 import { Spinner } from "@/components/ui/spinner";
+import { BlockButton } from "@/components/ui/BlockButton";
 import ImageUploader from "@/components/ui/UploadImage";
 import { TApiErrorResponse, getApiErrorMessage } from "@/lib/api";
 import {
@@ -210,6 +211,7 @@ export const SideProfile = ({
           )}
         </Button>
       )}
+      {isVisit && <BlockButton target={data} />}
     </div>
   );
 };

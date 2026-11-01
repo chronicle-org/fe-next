@@ -174,3 +174,32 @@ export const publishDraft = async (postId: number) => {
     undefined
   );
 };
+export type TPostStats = Pick<
+  TPost,
+  | "id"
+  | "title"
+  | "created_at"
+  | "view_count"
+  | "likes_count"
+  | "comment_count"
+  | "bookmarks_count"
+  | "share_count"
+> & { likes_last_30_days: number };
+
+export type TWriterStats = {
+  totals: {
+    posts: number;
+    views: number;
+    likes: number;
+    comments: number;
+    bookmarks: number;
+    shares: number;
+    likes_last_30_days: number;
+    followers: number;
+  };
+  posts: TPostStats[];
+};
+
+export const getMyStats = () => {
+  return getMethod<TApiResponse<TWriterStats>>(`${baseUrl}/stats/mine`);
+};

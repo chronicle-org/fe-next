@@ -94,3 +94,29 @@ export const getBookmarks = async (userId: number, params: TPaginationParam) => 
     { params }
   );
 };
+
+/** People whose name or @handle contains `search`, most followed first. */
+export const searchUsers = (search: string, params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TResponseUser[]>>(baseUrl, {
+    params: { ...params, search },
+  });
+};
+
+export const blockUser = (userId: number) => {
+  return postMethod<undefined, TApiResponse<{ message: string }>>(
+    `${baseUrl}/block/${userId}`
+  );
+};
+
+export const unblockUser = (userId: number) => {
+  return postMethod<undefined, TApiResponse<{ message: string }>>(
+    `${baseUrl}/unblock/${userId}`
+  );
+};
+
+export const getBlockedUsers = (params: TPaginationParam) => {
+  return getMethod<TApiResponsePagination<TResponseUser[]>>(
+    `${baseUrl}/blocks`,
+    { params }
+  );
+};

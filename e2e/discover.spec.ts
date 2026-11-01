@@ -68,7 +68,9 @@ test("tag pages filter by tag and sort", async ({ page }) => {
       return route.fulfill(ok({ data: [post(3, "Tagged story")], total: 1 }));
     },
   });
+  // Old /search?tag= links land on the tag page.
   await page.goto("/search?tag=javascript");
+  await expect(page).toHaveURL(/\/tag\/javascript$/);
   await expect(page.getByRole("heading", { name: "#javascript" })).toBeVisible();
   await expect(page.getByText("Tagged story")).toBeVisible();
   expect(requests.at(-1)?.get("tag")).toBe("javascript");
@@ -89,7 +91,7 @@ test("tag pages fall back to a text search on an older API", async ({ page }) =>
       );
     },
   });
-  await page.goto("/search?tag=rust");
+  await page.goto("/tag/rust");
   await expect(page.getByText("Found by rust")).toBeVisible();
 });
 
